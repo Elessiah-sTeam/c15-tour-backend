@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: c15tour-backend
+  profiles:
+    active: dev # Par défaut, on est en dev (H2) quand tu lances sur ton PC

@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    # localhost car Docker expose le port sur TA machine
+    url: jdbc:postgresql://localhost:5433/c15tourdb
+    username: devuser      # Doit être identique au docker-compose
+    password: devpassword  # Doit être identique au docker-compose
+    driverClassName: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update # Va créer la table 'tours' tout seul
+    show-sql: true # Pour voir les requêtes

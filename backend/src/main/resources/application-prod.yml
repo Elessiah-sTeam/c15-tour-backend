@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    # On lit la variable d'env DB_URL, sinon on met une valeur par défaut vide
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driverClassName: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      # On évite "update" qui peut casser la prod.
+      ddl-auto: validate
+    show-sql: false # On évite de polluer les logs en prod
