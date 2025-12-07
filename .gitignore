@@ -29,3 +29,14 @@ Thumbs.db
 
 # Debug / Tools
 coverage/
+
+# --- Maven ---
+target/
+**/target/
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+

@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: C15Tour API
+  version: 0.0.1
+  description: API minimale pour initialisation.
+
+paths:
+  /ping:
+    get:
+      summary: Health Check
+      operationId: ping
+      tags:
+        - System
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+
+components:
+  schemas:
+    Message:
+      type: object
+      properties:
+        content:
+          type: string
+          example: "Pong"
