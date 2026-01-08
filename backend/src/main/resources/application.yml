@@ -3,6 +3,9 @@ spring:
     name: c15tour-backend
   profiles:
     active: dev
+  flyway:
+    baseline-on-migrate: true
 
 allowed:
   origins: ${ALLOWED_ORIGINS:http://localhost}
+
