@@ -3,7 +3,6 @@
 # On part d'une image Java 21 légère
 FROM eclipse-temurin:21-jre-alpine
 
-# On définit le répertoire de travail
 WORKDIR /app
 
 # On copie le JAR généré
