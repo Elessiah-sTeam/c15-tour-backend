@@ -173,6 +173,11 @@ components:
           $ref: '#/components/schemas/Coordinates'
         endPoint:
           $ref: '#/components/schemas/Coordinates'
+        waypoints:
+          type: array
+          description: "List of intermediate stops"
+          items:
+            $ref: '#/components/schemas/Coordinates'
 
     TourResponse:
       type: object
@@ -188,3 +193,7 @@ components:
           $ref: '#/components/schemas/Coordinates'
         endPoint:
           $ref: '#/components/schemas/Coordinates'
+        waypoints:
+            type: array
+            items:
+                $ref: '#/components/schemas/Coordinates'
