@@ -127,6 +127,28 @@ paths:
           description: Tour deleted
         '404':
           description: Tour not found
+  /tours/share/{code}:
+    get:
+      summary: Get a tour by share code
+      operationId: getTourByShareCode
+      tags:
+        - Tours
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: "6character unique share code"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tour found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TourResponse'
+        '404':
+          description: Tour not found
 
 components:
   schemas:
@@ -189,11 +211,25 @@ components:
         name:
           type: string
           example: "Roadtrip Nantes"
+        shareCode:
+          type: string
+          example: "C15ROC"
+        geometry:
+          type: string
+          description: "Encoded polyline or GeoJSON string"
+        distance:
+          type: number
+          format: double
+          description: "Distance in meters"
+        duration:
+          type: number
+          format: double
+          description: "Duration in seconds"
         startPoint:
           $ref: '#/components/schemas/Coordinates'
         endPoint:
           $ref: '#/components/schemas/Coordinates'
         waypoints:
-            type: array
-            items:
-                $ref: '#/components/schemas/Coordinates'
+          type: array
+          items:
+            $ref: '#/components/schemas/Coordinates'

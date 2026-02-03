@@ -37,4 +37,14 @@ public class Tour {
     @OneToMany(mappedBy = "tour", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Waypoint> waypoints = new ArrayList<>();
 
+    @Column(name = "share_code", unique = true, length = 6)
+    private String shareCode;
+
+    @Column(columnDefinition = "TEXT")
+    private String geometry;
+
+    private Double distance;
+
+    private Double duration;
+
 }
