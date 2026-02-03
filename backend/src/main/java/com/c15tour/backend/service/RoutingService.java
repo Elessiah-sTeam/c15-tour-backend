@@ -5,6 +5,7 @@ import com.c15tour.model.Coordinates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriBuilder;
 
 import java.util.List;
 
@@ -20,24 +21,33 @@ public class RoutingService {
 
     public OSRMResponse CalculateRoute(List<Coordinates> coordinatesList,
                                        Boolean directions) {
-        StringBuilder strCoordinates = new StringBuilder();
-        for (int i = 0; i < coordinatesList.size(); i++)
-        {
-            Coordinates co = coordinatesList.get(i);
-            strCoordinates.append(co.getLatitude()).append(",").append(co.getLongitude());
-            if ((i + 1) < coordinatesList.size())
-                strCoordinates.append(";");
+        if (coordinatesList == null || coordinatesList.size() < 2) return null;
+
+        String coords = coordinatesList.stream()
+                // OSRM: lon,lat
+                .map(c -> c.getLongitude() + "," + c.getLatitude())
+                .collect(java.util.stream.Collectors.joining(";"));
+        try {
+            OSRMResponse response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/route/v1/driving/{coords}")
+                            .queryParam("overview", "full")
+                            .queryParam("geometries", "geojson")
+                            .queryParam("steps", directions)
+                            .build(coords))
+                    .retrieve()
+                    .body(OSRMResponse.class);
+
+            if (response != null && "Ok".equalsIgnoreCase(response.code())) return response;
+            return null;
+
+        } catch (org.springframework.web.client.RestClientResponseException e) {
+            // 4xx/5xx: tu peux logguer e.getStatusCode() et e.getResponseBodyAsString()
+            return null;
+        } catch (org.springframework.web.client.RestClientException e) {
+            // réseau / timeout / etc.
+            return null;
         }
-        String uri = "/route/v1/driving/"
-                + strCoordinates
-                + "?"
-                + "overview=full"
-                + "&geometries=geojson"
-                + "&step=" + (directions ? "true" : "false");
-        return restClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(OSRMResponse.class);
     }
 
     public OSRMResponse CalculateRoute(List<Coordinates> coordinatesList) {
