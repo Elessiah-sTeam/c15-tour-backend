@@ -44,7 +44,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: devpassword
       # Autoriser les appels venant du frontend
       ALLOWED_ORIGINS: "http://localhost,http://localhost:5173"
-      OSRM_API_URL: "http://osrm-backend:5001"
+      OSRM_API_URL: "http://osrm-backend:5000"
     depends_on:
       - postgres
       - osrm-backend

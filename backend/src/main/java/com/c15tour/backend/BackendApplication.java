@@ -27,7 +27,7 @@ public class BackendApplication {
 		coordinatesList.add(c2);
 
 		return args -> {
-			System.out.println(service.CalculateRoute(coordinatesList));
+			System.out.println(service.calculateRoute(coordinatesList));
 		};
 	}
 }

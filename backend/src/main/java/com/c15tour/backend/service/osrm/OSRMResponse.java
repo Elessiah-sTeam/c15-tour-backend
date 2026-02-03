@@ -23,7 +23,7 @@ public record OSRMResponse(
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Geometry(
-            List<Double> coordinates,
+            List<List<Double>> coordinates,
             String type
     ){}
 

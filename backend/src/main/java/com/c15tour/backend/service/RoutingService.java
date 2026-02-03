@@ -5,7 +5,6 @@ import com.c15tour.model.Coordinates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.util.UriBuilder;
 
 import java.util.List;
 
@@ -19,7 +18,7 @@ public class RoutingService {
         this.restClient = restClient;
     }
 
-    public OSRMResponse CalculateRoute(List<Coordinates> coordinatesList,
+    public OSRMResponse calculateRoute(List<Coordinates> coordinatesList,
                                        Boolean directions) {
         if (coordinatesList == null || coordinatesList.size() < 2) return null;
 
@@ -42,15 +41,19 @@ public class RoutingService {
             return null;
 
         } catch (org.springframework.web.client.RestClientResponseException e) {
+            System.err.println("ERREUR HTTP OSRM : " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+            e.printStackTrace();
             // 4xx/5xx: tu peux logguer e.getStatusCode() et e.getResponseBodyAsString()
             return null;
         } catch (org.springframework.web.client.RestClientException e) {
+            System.err.println("ERREUR CLIENT OSRM (Réseau ou Parsing) : " + e.getMessage());
+            e.printStackTrace();
             // réseau / timeout / etc.
             return null;
         }
     }
 
-    public OSRMResponse CalculateRoute(List<Coordinates> coordinatesList) {
-        return CalculateRoute(coordinatesList, false);
+    public OSRMResponse calculateRoute(List<Coordinates> coordinatesList) {
+        return calculateRoute(coordinatesList, false);
     }
 }
