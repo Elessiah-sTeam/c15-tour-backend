@@ -44,8 +44,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: devpassword
       # Autoriser les appels venant du frontend
       ALLOWED_ORIGINS: "http://localhost,http://localhost:5173"
+      OSRM_API_URL: "http://osrm-backend:5000"
     depends_on:
       - postgres
+      - osrm-backend
     networks:
       - c15-network
 
@@ -59,6 +61,20 @@ services:
       - "80:80" # Site accessible sur http://localhost
     depends_on:
       - backend
+    networks:
+      - c15-network
+      
+  # --- 5. OSRM Service (Routing Engine) ---
+  osrm-backend:
+    platform: linux/amd64
+    image: osrm/osrm-backend
+    container_name: c15tour-osrm
+    restart: always
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./osrm-data:/data
+    command: osrm-routed --algorithm ch /data/pays-de-la-loire.osrm
     networks:
       - c15-network
 
