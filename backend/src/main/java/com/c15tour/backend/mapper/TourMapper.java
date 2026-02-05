@@ -55,6 +55,11 @@ public class TourMapper {
         response.setId(entity.getId());
         response.setName(entity.getName());
 
+        response.setShareCode(entity.getShareCode());
+        response.setGeometry(entity.getGeometry());
+        response.setDistance(entity.getDistance());
+        response.setDuration(entity.getDuration());
+
         Coordinates start = new Coordinates();
         start.setLatitude(entity.getStartLatitude());
         start.setLongitude(entity.getStartLongitude());
