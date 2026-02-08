@@ -191,11 +191,39 @@ components:
           type: string
           example: "Invalid input data"
 
+    Waypoints:
+      type: object
+      required:
+        - name
+        - coordinates
+      properties:
+        name:
+          type: string
+          example: "Etape 1"
+        coordinates:
+          $ref: "#/components/schemas/Coordinates"
+
+    Segment:
+      type: object
+      required:
+        - name
+        - waypoints
+      properties:
+        name:
+          type: string
+          example: "Segment 1"
+        waypoint:
+          type: array
+          minItems: 2
+          items:
+            $ref: "#/components/schemas/Waypoints"
+
     TourCreateRequest:
       type: object
       required:
         - name
         - startPoint
+        - segments
         - endPoint
       properties:
         name:
@@ -203,13 +231,12 @@ components:
           example: "Roadtrip Nantes"
         startPoint:
           $ref: '#/components/schemas/Coordinates'
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Segment'
         endPoint:
           $ref: '#/components/schemas/Coordinates'
-        waypoints:
-          type: array
-          description: "List of intermediate stops"
-          items:
-            $ref: '#/components/schemas/Coordinates'
 
     TourCalculationRequest:
       type: object
