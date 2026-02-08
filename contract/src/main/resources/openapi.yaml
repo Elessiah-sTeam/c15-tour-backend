@@ -126,31 +126,6 @@ paths:
           description: Tour deleted
         '404':
           description: Tour not found
-  /tours/calculate:
-    post:
-      summary: Calculate an Itinerary
-      operationId: calculateItinerary
-      tags:
-        - Calculation
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TourCalculationRequest'
-      responses:
-        '200':
-          description: Calculated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CalculationResponse'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -203,7 +178,7 @@ components:
         coordinates:
           $ref: "#/components/schemas/Coordinates"
 
-    Segment:
+    SegmentRequest:
       type: object
       required:
         - name
@@ -218,45 +193,56 @@ components:
           items:
             $ref: "#/components/schemas/Waypoints"
 
+    SegmentResponse:
+      type: object
+      required:
+        - name
+        - distance
+        - duration
+        - geometry
+        - waypoints
+      properties:
+        name:
+          type: string
+          example: "Segment 1"
+        distance:
+          type: integer
+          format: int64
+          description: Total distance in meters
+          example: 256340
+        duration:
+          type: integer
+          format: int64
+          description: Total duration in seconds
+          example: 4248
+        geometry:
+          type: string
+          description: Geometry of the OSRM Response on type JSON
+        waypoint:
+          type: array
+          description: List of the points which compose the segment
+          items:
+            $ref: "#/components/schemas/Waypoints"
+
     TourCreateRequest:
       type: object
       required:
         - name
-        - startPoint
         - segments
-        - endPoint
       properties:
         name:
           type: string
           example: "Roadtrip Nantes"
-        startPoint:
-          $ref: '#/components/schemas/Coordinates'
         segments:
           type: array
           items:
-            $ref: '#/components/schemas/Segment'
-        endPoint:
-          $ref: '#/components/schemas/Coordinates'
-
-    TourCalculationRequest:
-      type: object
-      required:
-        - waypoints
-      properties:
-        waypoints:
-          type: array
-          minItems: 2
-          description: List of all points of an itinerary
-          items:
-            $ref: '#/components/schemas/Coordinates'
+            $ref: '#/components/schemas/SegmentRequest'
 
     TourResponse:
       type: object
       required:
         - id
         - name
-        - startPoint
-        - endPoint
       properties:
         id:
           type: integer
@@ -265,14 +251,10 @@ components:
         name:
           type: string
           example: "Roadtrip Nantes"
-        startPoint:
-          $ref: '#/components/schemas/Coordinates'
-        endPoint:
-          $ref: '#/components/schemas/Coordinates'
-        waypoints:
+        segments:
           type: array
           items:
-            $ref: '#/components/schemas/Coordinates'
+            $ref: '#/components/schemas/Segment'
 
     CalculationResponse:
       type: object

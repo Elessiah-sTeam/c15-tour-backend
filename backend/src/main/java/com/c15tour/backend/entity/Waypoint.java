@@ -22,7 +22,7 @@ public class Waypoint {
     private Integer orderIndex;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tour_id", nullable = false)
-    private Tour tour;
+    @JoinColumn(name = "segment_id", nullable = false)
+    private Segment segment;
 
 }
