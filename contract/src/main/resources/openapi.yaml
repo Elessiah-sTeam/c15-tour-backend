@@ -276,22 +276,15 @@ components:
         shareCode:
           type: string
           example: "C15ROC"
-        geometry:
-          type: string
-          description: "Encoded polyline or GeoJSON string"
-        distance:
-          type: number
-          format: double
-          description: "Distance in meters"
-        duration:
-          type: number
-          format: double
-          description: "Duration in seconds"
-        startPoint:
-          $ref: '#/components/schemas/Coordinates'
-        endPoint:
-          $ref: '#/components/schemas/Coordinates'
-        waypoints:
+        totalDistance:
+          type: integer
+          description: Total distance of the tour in meters
+          example: 50
+        totalDuration:
+          type: integer
+          description: Total duration of the tour in seconds
+          example: 3852
+        segments:
           type: array
           items:
-            $ref: '#/components/schemas/Coordinates'
+            $ref: '#/components/schemas/SegmentResponse'

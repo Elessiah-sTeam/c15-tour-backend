@@ -3,16 +3,13 @@ package com.c15tour.backend.mapper;
 import com.c15tour.backend.entity.Segment;
 import com.c15tour.backend.entity.Tour;
 import com.c15tour.backend.entity.Waypoint;
-import com.c15tour.model.Coordinates;
-import com.c15tour.model.SegmentRequest;
-import com.c15tour.model.TourCreateRequest;
-import com.c15tour.model.TourResponse;
-import com.c15tour.model.Waypoints;
+import com.c15tour.model.*;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class TourMapper {
@@ -78,48 +75,54 @@ public class TourMapper {
 
     // --- Entity -> DTO (Response) ---
 
+    private Waypoints toWaypointsDto(Waypoint entity) {
+        Waypoints dto = new Waypoints();
+
+        Coordinates coords = new Coordinates();
+        coords.setLatitude(entity.getLatitude());
+        coords.setLongitude(entity.getLongitude());
+        dto.setCoordinates(coords);
+
+        // Required by Contract, but missing in DB. Providing default.
+        dto.setName("Waypoint " + entity.getOrderIndex());
+
+        return dto;
+    }
+
+    private SegmentResponse toSegmentResponse(Segment segment) {
+        SegmentResponse response = new SegmentResponse();
+        response.setName(segment.getName());
+        response.setDistance(segment.getDistance() != null ? segment.getDistance().longValue() : 0L);
+        response.setDuration(segment.getDuration() != null ? segment.getDuration().longValue() : 0L);
+        response.setGeometry(segment.getGeometry());
+
+        if (segment.getWaypoints() != null) {
+            List<Waypoints> waypointDtos = segment.getWaypoints().stream()
+                    .sorted(Comparator.comparingInt(Waypoint::getOrderIndex))
+                    .map(this::toWaypointsDto)
+                    .collect(Collectors.toList());
+            // Note: The generated DTO field is 'waypoint' (singular) based on your openapi.yaml
+            response.setWaypoint(waypointDtos);
+        }
+        return response;
+    }
+
     public TourResponse toResponse(Tour entity) {
         TourResponse response = new TourResponse();
         response.setId(entity.getId());
         response.setName(entity.getName());
         response.setShareCode(entity.getShareCode());
 
-        response.setDistance(entity.getTotalDistance() != null ? entity.getTotalDistance().doubleValue() : 0.0);
-        response.setDuration(entity.getTotalDuration() != null ? entity.getTotalDuration().doubleValue() : 0.0);
+        response.setTotalDistance(entity.getTotalDistance() != null ? entity.getTotalDistance() : 0);
+        response.setTotalDuration(entity.getTotalDuration() != null ? entity.getTotalDuration() : 0);
 
-        List<Segment> sortedSegments = entity.getSegments().stream()
-                .sorted(Comparator.comparingInt(Segment::getOrderIndex))
-                .toList();
-
-        List<Coordinates> allCoordinates = new ArrayList<>();
-
-        for (Segment seg : sortedSegments) {
-            if (seg.getWaypoints() != null) {
-                seg.getWaypoints().stream()
-                        .sorted(Comparator.comparingInt(Waypoint::getOrderIndex))
-                        .forEach(wp -> {
-                            Coordinates c = new Coordinates();
-                            c.setLatitude(wp.getLatitude());
-                            c.setLongitude(wp.getLongitude());
-                            allCoordinates.add(c);
-                        });
-            }
+        if (entity.getSegments() != null) {
+            List<SegmentResponse> segmentResponses = entity.getSegments().stream()
+                    .sorted(Comparator.comparingInt(Segment::getOrderIndex))
+                    .map(this::toSegmentResponse)
+                    .collect(Collectors.toList());
+            response.setSegments(segmentResponses);
         }
-
-        if (!allCoordinates.isEmpty()) {
-            response.setStartPoint(allCoordinates.getFirst());
-
-            response.setEndPoint(allCoordinates.getLast());
-
-            if (allCoordinates.size() > 2) {
-                List<Coordinates> intermediates = new ArrayList<>(allCoordinates.subList(1, allCoordinates.size() - 1));
-                response.setWaypoints(intermediates);
-            } else {
-                response.setWaypoints(new ArrayList<>());
-            }
-        }
-
-        response.setGeometry(null);
 
         return response;
     }

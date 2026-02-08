@@ -2,6 +2,8 @@ package com.c15tour.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +35,7 @@ public class Segment {
     private List<Waypoint> waypoints = new ArrayList<>();
 
     @Column(nullable = true)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String geometry;
 
     @Column(name = "order_index", nullable = false)
