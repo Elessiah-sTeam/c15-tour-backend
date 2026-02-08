@@ -34,12 +34,4 @@ public class Tour {
 
     @Column(name = "share_code", unique = true, length = 6)
     private String shareCode;
-
-    @Column(columnDefinition = "TEXT")
-    private String geometry;
-
-    private Double distance;
-
-    private Double duration;
-
 }
