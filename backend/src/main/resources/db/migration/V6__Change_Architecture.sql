@@ -6,9 +6,10 @@ ALTER TABLE tours
     DROP COLUMN start_lon,
     DROP COLUMN end_lat,
     DROP COLUMN end_lon,
-    DROP COLUMN geometry,
-    RENAME COLUMN distance TO total_distance,
-    RENAME COLUMN duration TO total_duration
+    DROP COLUMN geometry;
+
+ALTER TABLE tours RENAME COLUMN distance TO total_distance;
+ALTER TABLE tours RENAME COLUMN duration TO total_duration;
 
 CREATE TABLE IF NOT EXISTS segment (
      id SERIAL PRIMARY KEY,
@@ -25,7 +26,7 @@ CREATE TABLE IF NOT EXISTS segment (
 
      CONSTRAINT fk_segment_tour
          FOREIGN KEY (tour_id)
-             REFERENCES tour(id)
+             REFERENCES tours(id)
              ON DELETE CASCADE
 );
 

@@ -1,9 +1,13 @@
 package com.c15tour.backend.controller;
 
+import com.c15tour.backend.entity.Segment;
 import com.c15tour.backend.entity.Tour;
+import com.c15tour.backend.entity.Waypoint;
 import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.model.Coordinates;
+import com.c15tour.model.SegmentRequest;
 import com.c15tour.model.TourCreateRequest;
+import com.c15tour.model.Waypoints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
@@ -47,17 +52,31 @@ public class TourControllerIntegrationTest {
         TourCreateRequest request = new TourCreateRequest();
         request.setName(name);
 
-        Coordinates start = new Coordinates();
-        start.setLatitude(47.2184);
-        start.setLongitude(-1.5536);
-        request.setStartPoint(start);
+        // 1. Create Start Waypoint
+        Coordinates startCoord = new Coordinates();
+        startCoord.setLatitude(47.2184);
+        startCoord.setLongitude(-1.5536);
 
-        Coordinates end = new Coordinates();
-        end.setLatitude(48.8566);
-        end.setLongitude(2.3522);
-        request.setEndPoint(end);
+        Waypoints startWp = new Waypoints();
+        startWp.setName("Start Point");
+        startWp.setCoordinates(startCoord);
 
-        request.setWaypoints(List.of());
+        // 2. Create End Waypoint
+        Coordinates endCoord = new Coordinates();
+        endCoord.setLatitude(48.8566);
+        endCoord.setLongitude(2.3522);
+
+        Waypoints endWp = new Waypoints();
+        endWp.setName("End Point");
+        endWp.setCoordinates(endCoord);
+
+        // 3. Create Segment
+        SegmentRequest segment = new SegmentRequest();
+        segment.setName("Segment 1");
+        segment.setWaypoint(List.of(startWp, endWp));
+
+        // 4. Attach to Tour
+        request.setSegments(List.of(segment));
 
         return request;
     }
@@ -65,10 +84,36 @@ public class TourControllerIntegrationTest {
     private Tour createTourEntity(String name) {
         Tour tour = new Tour();
         tour.setName(name);
-        tour.setStartLatitude(10.0);
-        tour.setStartLongitude(20.0);
-        tour.setEndLatitude(30.0);
-        tour.setEndLongitude(40.0);
+        tour.setTotalDistance(100);
+        tour.setTotalDuration(3600);
+
+        // Create Segment
+        Segment segment = new Segment();
+        segment.setName("Test Segment");
+        segment.setTour(tour);
+        segment.setDistance(100);
+        segment.setDuration(3600);
+        segment.setOrderIndex(0);
+
+        // Create Waypoints (Start & End)
+        Waypoint wp1 = new Waypoint();
+        wp1.setLatitude(10.0);
+        wp1.setLongitude(20.0);
+        wp1.setOrderIndex(0);
+        wp1.setSegment(segment);
+
+        Waypoint wp2 = new Waypoint();
+        wp2.setLatitude(30.0);
+        wp2.setLongitude(40.0);
+        wp2.setOrderIndex(1);
+        wp2.setSegment(segment);
+
+        // Link Waypoints to Segment
+        segment.setWaypoints(new ArrayList<>(List.of(wp1, wp2)));
+
+        // Link Segment to Tour
+        tour.setSegments(new ArrayList<>(List.of(segment)));
+
         return tourRepository.save(tour);
     }
 

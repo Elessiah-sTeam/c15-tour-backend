@@ -2,11 +2,10 @@ package com.c15tour.backend.controller;
 
 import com.c15tour.api.ToursApi;
 import com.c15tour.backend.entity.Tour;
-import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.backend.mapper.TourMapper;
+import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.model.TourCreateRequest;
 import com.c15tour.model.TourResponse;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,14 +62,11 @@ public class TourController implements ToursApi {
     }
 
     @Override
-    public ResponseEntity<TourResponse> updateTour(Long id, @Valid TourCreateRequest tourCreateRequest) {
+    public ResponseEntity<TourResponse> updateTour(Long id, TourCreateRequest tourCreateRequest) {
         return tourRepository.findById(id)
                 .map(existingTour -> {
-                    existingTour.setName(tourCreateRequest.getName());
-                    existingTour.setStartLatitude(tourCreateRequest.getStartPoint().getLatitude());
-                    existingTour.setEndLatitude(tourCreateRequest.getEndPoint().getLatitude());
-                    existingTour.setStartLongitude(tourCreateRequest.getStartPoint().getLongitude());
-                    existingTour.setEndLongitude(tourCreateRequest.getEndPoint().getLongitude());
+                    tourMapper.updateEntity(existingTour, tourCreateRequest);
+
 
                     Tour savedTour = tourRepository.save(existingTour);
                     return ResponseEntity.ok(tourMapper.toResponse(savedTour));
