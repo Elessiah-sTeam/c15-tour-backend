@@ -18,7 +18,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Message'
-
   /tours:
     post:
       summary: Create a new tour
@@ -108,7 +107,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TourResponse'
         '404':
-          description: Tour not found'
+          description: Tour not found
 
     delete:
       summary: Delete a tour by ID
@@ -127,6 +126,31 @@ paths:
           description: Tour deleted
         '404':
           description: Tour not found
+  /tours/calculate:
+    post:
+      summary: Calculate an Itinerary
+      operationId: calculateItinerary
+      tags:
+        - Calculation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TourCalculationRequest'
+      responses:
+        '200':
+          description: Calculated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -139,14 +163,20 @@ components:
         latitude:
           type: number
           format: double
+          minimum: -90
+          maximum: 90
           example: 47.218371
         longitude:
           type: number
           format: double
+          minimum: -180
+          maximum: 180
           example: -1.553621
 
     Message:
       type: object
+      required:
+        - content
       properties:
         content:
           type: string
@@ -154,6 +184,8 @@ components:
 
     Error:
       type: object
+      required:
+        - message
       properties:
         message:
           type: string
@@ -179,8 +211,25 @@ components:
           items:
             $ref: '#/components/schemas/Coordinates'
 
+    TourCalculationRequest:
+      type: object
+      required:
+        - waypoints
+      properties:
+        waypoints:
+          type: array
+          minItems: 2
+          description: List of all points of an itinerary
+          items:
+            $ref: '#/components/schemas/Coordinates'
+
     TourResponse:
       type: object
+      required:
+        - id
+        - name
+        - startPoint
+        - endPoint
       properties:
         id:
           type: integer
@@ -194,6 +243,29 @@ components:
         endPoint:
           $ref: '#/components/schemas/Coordinates'
         waypoints:
-            type: array
-            items:
-                $ref: '#/components/schemas/Coordinates'
+          type: array
+          items:
+            $ref: '#/components/schemas/Coordinates'
+
+    CalculationResponse:
+      type: object
+      required:
+        - totalDistance
+        - totalDuration
+        - geometry
+      properties:
+        totalDistance:
+          type: integer
+          format: int64
+          description: Total distance in meters
+          example: 256340
+        totalDuration:
+          type: integer
+          format: int64
+          description: Total duration in seconds
+          example: 4248
+        geometry:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/Coordinates'
