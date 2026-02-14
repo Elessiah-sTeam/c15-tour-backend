@@ -19,32 +19,19 @@ public class Tour {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "start_lat", nullable = false)
-    private Double startLatitude;
+    @Column(name = "total_distance", nullable = false)
+    private Integer totalDistance;
 
-    @Column(name = "start_lon", nullable = false)
-    private Double startLongitude;
-
-    @Column(name = "end_lat", nullable = false)
-    private Double endLatitude;
-
-    @Column(name = "end_lon", nullable = false)
-    private Double endLongitude;
+    @Column(name = "total_duration", nullable = false)
+    private Integer totalDuration; // En secondes
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "tour", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Waypoint> waypoints = new ArrayList<>();
+    @OrderBy("orderIndex ASC")
+    private List<Segment> segments = new ArrayList<>();
 
     @Column(name = "share_code", unique = true, length = 6)
     private String shareCode;
-
-    @Column(columnDefinition = "TEXT")
-    private String geometry;
-
-    private Double distance;
-
-    private Double duration;
-
 }
