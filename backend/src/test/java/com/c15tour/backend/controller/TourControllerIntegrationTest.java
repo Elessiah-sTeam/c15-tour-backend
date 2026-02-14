@@ -73,7 +73,7 @@ public class TourControllerIntegrationTest {
         // 3. Create Segment
         SegmentRequest segment = new SegmentRequest();
         segment.setName("Segment 1");
-        segment.setWaypoint(List.of(startWp, endWp));
+        segment.setWaypoints(List.of(startWp, endWp));
 
         // 4. Attach to Tour
         request.setSegments(List.of(segment));
