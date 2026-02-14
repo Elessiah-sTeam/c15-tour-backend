@@ -56,9 +56,9 @@ public class TourMapper {
         segment.setDuration(0);
 
         List<Waypoint> waypointEntities = new ArrayList<>();
-        if (request.getWaypoint() != null) {
-            for (int i = 0; i < request.getWaypoint().size(); i++) {
-                Waypoints wpDto = request.getWaypoint().get(i);
+        if (request.getWaypoints() != null) {
+            for (int i = 0; i < request.getWaypoints().size(); i++) {
+                Waypoints wpDto = request.getWaypoints().get(i);
                 if (wpDto.getCoordinates() != null) {
                     Waypoint wp = new Waypoint();
                     wp.setLatitude(wpDto.getCoordinates().getLatitude());
@@ -101,8 +101,7 @@ public class TourMapper {
                     .sorted(Comparator.comparingInt(Waypoint::getOrderIndex))
                     .map(this::toWaypointsDto)
                     .collect(Collectors.toList());
-            // Note: The generated DTO field is 'waypoint' (singular) based on your openapi.yaml
-            response.setWaypoint(waypointDtos);
+            response.setWaypoints(waypointDtos);
         }
         return response;
     }

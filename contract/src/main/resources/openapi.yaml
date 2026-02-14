@@ -209,7 +209,7 @@ components:
         name:
           type: string
           example: "Segment 1"
-        waypoint:
+        waypoints:
           type: array
           minItems: 2
           items:
@@ -240,7 +240,7 @@ components:
         geometry:
           type: string
           description: Geometry of the OSRM Response on type JSON
-        waypoint:
+        waypoints:
           type: array
           description: List of the points which compose the segment
           items:
