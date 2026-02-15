@@ -21,6 +21,9 @@ public class Waypoint {
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
 
+    @Column(name = "name")
+    private String name;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "segment_id", nullable = false)
     private Segment segment;
