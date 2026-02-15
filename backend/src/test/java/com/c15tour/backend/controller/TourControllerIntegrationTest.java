@@ -184,4 +184,56 @@ public class TourControllerIntegrationTest {
         mockMvc.perform(delete("/tours/999999"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void createTour_ShouldPersistWaypointNames() throws Exception {
+        TourCreateRequest request = createTourRequest("Tour with Named Waypoints");
+
+        mockMvc.perform(post("/tours")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.segments[0].waypoints[0].name", is("Start Point")))
+                .andExpect(jsonPath("$.segments[0].waypoints[1].name", is("End Point")));
+    }
+
+    @Test
+    void getTourById_ShouldReturnPersistedWaypointNames() throws Exception {
+        // Create a tour with named waypoints
+        Tour tour = new Tour();
+        tour.setName("Tour with Waypoint Names");
+        tour.setTotalDistance(100);
+        tour.setTotalDuration(3600);
+
+        Segment segment = new Segment();
+        segment.setName("Test Segment");
+        segment.setTour(tour);
+        segment.setDistance(100);
+        segment.setDuration(3600);
+        segment.setOrderIndex(0);
+
+        Waypoint wp1 = new Waypoint();
+        wp1.setLatitude(10.0);
+        wp1.setLongitude(20.0);
+        wp1.setOrderIndex(0);
+        wp1.setName("First Waypoint");
+        wp1.setSegment(segment);
+
+        Waypoint wp2 = new Waypoint();
+        wp2.setLatitude(30.0);
+        wp2.setLongitude(40.0);
+        wp2.setOrderIndex(1);
+        wp2.setName("Second Waypoint");
+        wp2.setSegment(segment);
+
+        segment.setWaypoints(new ArrayList<>(List.of(wp1, wp2)));
+        tour.setSegments(new ArrayList<>(List.of(segment)));
+
+        Tour savedTour = tourRepository.save(tour);
+
+        mockMvc.perform(get("/tours/" + savedTour.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.segments[0].waypoints[0].name", is("First Waypoint")))
+                .andExpect(jsonPath("$.segments[0].waypoints[1].name", is("Second Waypoint")));
+    }
 }

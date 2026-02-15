@@ -64,6 +64,7 @@ public class TourMapper {
                     wp.setLatitude(wpDto.getCoordinates().getLatitude());
                     wp.setLongitude(wpDto.getCoordinates().getLongitude());
                     wp.setOrderIndex(i);
+                    wp.setName(wpDto.getName());
                     wp.setSegment(segment);
                     waypointEntities.add(wp);
                 }
@@ -83,8 +84,7 @@ public class TourMapper {
         coords.setLongitude(entity.getLongitude());
         dto.setCoordinates(coords);
 
-        // Required by Contract, but missing in DB. Providing default.
-        dto.setName("Waypoint " + entity.getOrderIndex());
+        dto.setName(entity.getName());
 
         return dto;
     }
