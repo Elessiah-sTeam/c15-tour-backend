@@ -1,15 +1,23 @@
 package com.c15tour.backend.controller;
 
 import com.c15tour.api.ToursApi;
+import com.c15tour.backend.entity.Segment;
 import com.c15tour.backend.entity.Tour;
+import com.c15tour.backend.entity.Waypoint;
 import com.c15tour.backend.mapper.TourMapper;
 import com.c15tour.backend.repository.TourRepository;
+import com.c15tour.backend.service.RoutingService;
+import com.c15tour.backend.service.osrm.OSRMResponse;
+import com.c15tour.model.Coordinates;
 import com.c15tour.model.TourCreateRequest;
 import com.c15tour.model.TourResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,21 +26,24 @@ public class TourController implements ToursApi {
 
     private final TourRepository tourRepository;
     private final TourMapper tourMapper;
+    private final RoutingService routingService;
+    private final ObjectMapper objectMapper;
 
-    public TourController(TourRepository tourRepository, TourMapper tourMapper) {
+    public TourController(TourRepository tourRepository, TourMapper tourMapper, RoutingService routingService, ObjectMapper objectMapper) {
         this.tourRepository = tourRepository;
         this.tourMapper = tourMapper;
+        this.routingService = routingService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
     public ResponseEntity<TourResponse> createTour(TourCreateRequest tourCreateRequest) {
         Tour tourEntity = tourMapper.toEntity(tourCreateRequest);
 
+        calculateTourRoutes(tourEntity);
+
         Tour savedTour = tourRepository.save(tourEntity);
-
-        TourResponse response = tourMapper.toResponse(savedTour);
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(tourMapper.toResponse(savedTour), HttpStatus.CREATED);
     }
 
     @Override
@@ -67,6 +78,7 @@ public class TourController implements ToursApi {
                 .map(existingTour -> {
                     tourMapper.updateEntity(existingTour, tourCreateRequest);
 
+                    calculateTourRoutes(existingTour);
 
                     Tour savedTour = tourRepository.save(existingTour);
                     return ResponseEntity.ok(tourMapper.toResponse(savedTour));
@@ -80,5 +92,56 @@ public class TourController implements ToursApi {
                 .map(tourMapper::toResponse)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    private void calculateTourRoutes(Tour tour) {
+        if (tour.getSegments() == null) return;
+
+        int totalDist = 0;
+        int totalDur = 0;
+
+        for (Segment segment : tour.getSegments()) {
+            List<Waypoint> waypoints = segment.getWaypoints();
+            if (waypoints == null || waypoints.size() < 2) {
+                continue; // Pas assez de waypoints pour calculer une route
+            }
+
+            List<Coordinates> coords = waypoints.stream()
+                    .sorted(Comparator.comparingInt(Waypoint::getOrderIndex)) // s'assurer que les waypoints sont dans le bon ordre
+                    .map(wp -> {
+                        Coordinates c = new Coordinates();
+                        c.setLatitude(wp.getLatitude());
+                        c.setLongitude(wp.getLongitude());
+                        return c;
+                    })
+                    .collect(Collectors.toList());
+
+            // On appelle OSRM
+            OSRMResponse response = routingService.calculateRoute(coords);
+
+            // On met à jour le segment
+            if (response != null && response.routes() != null && !response.routes().isEmpty()) {
+                var route = response.routes().getFirst();
+
+                int dist = route.distance() != null ? (int) Math.round(route.distance()) : 0;
+                int dur = route.duration() != null ? (int) Math.round(route.duration()) : 0;
+
+                segment.setDistance(dist);
+                segment.setDuration(dur);
+
+                totalDist += dist;
+                totalDur += dur;
+
+                try {
+                    String geometryJson = objectMapper.writeValueAsString(route.geometry());
+                    segment.setGeometry(geometryJson);
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        tour.setTotalDistance(totalDist);
+        tour.setTotalDuration(totalDur);
     }
 }
