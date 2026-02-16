@@ -122,7 +122,7 @@ public class TourController implements ToursApi {
                     .collect(Collectors.toList());
 
             // On appelle OSRM
-            OSRMResponse response = routingService.calculateRoute(coords);
+            OSRMResponse response = routingService.calculateRoute(coords, true);
 
             // On met à jour le segment
             if (response != null && response.routes() != null && !response.routes().isEmpty()) {
@@ -140,6 +140,15 @@ public class TourController implements ToursApi {
                 try {
                     String geometryJson = objectMapper.writeValueAsString(route.geometry());
                     segment.setGeometry(geometryJson);
+
+                    if (route.legs() != null) {
+                        List<OSRMResponse.Step> allSteps = route.legs().stream()
+                                .flatMap(leg -> leg.steps() != null ? leg.steps().stream() : java.util.stream.Stream.empty())
+                                .collect(Collectors.toList());
+
+                        String stepsJson = objectMapper.writeValueAsString(allSteps);
+                        segment.setSteps(stepsJson);
+                    }
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }

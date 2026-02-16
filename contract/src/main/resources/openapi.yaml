@@ -240,6 +240,9 @@ components:
         geometry:
           type: string
           description: Geometry of the OSRM Response on type JSON
+        steps:
+          type: string
+          description: List of navigation steps and maneuvers (JSON string)
         waypoints:
           type: array
           description: List of the points which compose the segment
