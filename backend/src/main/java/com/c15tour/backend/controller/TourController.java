@@ -7,6 +7,7 @@ import com.c15tour.backend.entity.Waypoint;
 import com.c15tour.backend.mapper.TourMapper;
 import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.backend.service.RoutingService;
+import com.c15tour.backend.service.ShareCodeService;
 import com.c15tour.backend.service.osrm.OSRMResponse;
 import com.c15tour.model.Coordinates;
 import com.c15tour.model.TourCreateRequest;
@@ -28,12 +29,14 @@ public class TourController implements ToursApi {
     private final TourMapper tourMapper;
     private final RoutingService routingService;
     private final ObjectMapper objectMapper;
+    private final ShareCodeService shareCodeService;
 
-    public TourController(TourRepository tourRepository, TourMapper tourMapper, RoutingService routingService, ObjectMapper objectMapper) {
+    public TourController(TourRepository tourRepository, TourMapper tourMapper, RoutingService routingService, ObjectMapper objectMapper, ShareCodeService shareCodeService) {
         this.tourRepository = tourRepository;
         this.tourMapper = tourMapper;
         this.routingService = routingService;
         this.objectMapper = objectMapper;
+        this.shareCodeService = shareCodeService;
     }
 
     @Override
@@ -41,6 +44,8 @@ public class TourController implements ToursApi {
         Tour tourEntity = tourMapper.toEntity(tourCreateRequest);
 
         calculateTourRoutes(tourEntity);
+
+        tourEntity.setShareCode(shareCodeService.generateUniqueShareCode());
 
         Tour savedTour = tourRepository.save(tourEntity);
         return new ResponseEntity<>(tourMapper.toResponse(savedTour), HttpStatus.CREATED);
