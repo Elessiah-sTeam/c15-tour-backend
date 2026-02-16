@@ -18,8 +18,7 @@ public record OSRMResponse(
           Double duration,
           String weight_name,
           Double weight
-    ){
-    }
+    ){}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Geometry(

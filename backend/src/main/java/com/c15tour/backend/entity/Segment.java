@@ -38,6 +38,9 @@ public class Segment {
     @JdbcTypeCode(SqlTypes.JSON)
     private String geometry;
 
+    @Column(columnDefinition = "TEXT")
+    private String steps;
+
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
 }

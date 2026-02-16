@@ -96,6 +96,8 @@ public class TourMapper {
         response.setDuration(segment.getDuration() != null ? segment.getDuration().longValue() : 0L);
         response.setGeometry(segment.getGeometry());
 
+        response.setSteps(segment.getSteps());
+
         if (segment.getWaypoints() != null) {
             List<Waypoints> waypointDtos = segment.getWaypoints().stream()
                     .sorted(Comparator.comparingInt(Waypoint::getOrderIndex))
