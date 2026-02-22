@@ -287,6 +287,11 @@ components:
           type: integer
           description: Total duration of the tour in seconds
           example: 3852
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-06-01T12:00:00Z"
+          description: Tour creation date and time
         segments:
           type: array
           items:

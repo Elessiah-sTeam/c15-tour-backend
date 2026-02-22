@@ -6,6 +6,7 @@ import com.c15tour.backend.entity.Waypoint;
 import com.c15tour.model.*;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -116,6 +117,10 @@ public class TourMapper {
 
         response.setTotalDistance(entity.getTotalDistance() != null ? entity.getTotalDistance() : 0);
         response.setTotalDuration(entity.getTotalDuration() != null ? entity.getTotalDuration() : 0);
+
+        if (entity.getCreatedAt() != null) {
+            response.setCreatedAt(entity.getCreatedAt().atOffset(ZoneOffset.UTC));
+        }
 
         if (entity.getSegments() != null) {
             List<SegmentResponse> segmentResponses = entity.getSegments().stream()
