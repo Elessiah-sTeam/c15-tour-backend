@@ -107,7 +107,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TourResponse'
         '404':
-          description: Tour not found'
+          description: Tour not found
 
     delete:
       summary: Delete a tour by ID
@@ -148,6 +148,46 @@ paths:
                 $ref: '#/components/schemas/TourResponse'
         '404':
           description: Tour not found
+
+  /tours/{id}/route-to-start:
+    post:
+      summary: Get route from current location to the start of the tour
+      operationId: getRouteToStart
+      tags:
+        - TourCalculation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID du tour"
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPositionRequest'
+      responses:
+        '200':
+          description: Route calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteToStartResponse'
+        '404':
+          description: Tour not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -296,3 +336,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SegmentResponse'
+
+    UserPositionRequest:
+      type: object
+      required:
+        - coordinates
+      properties:
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+
+    RouteToStartResponse:
+      type: object
+      required:
+        - distance
+        - duration
+        - geometry
+      properties:
+        distance:
+          type: integer
+          format: int64
+          description: Distance en mètres depuis la position actuelle jusqu'au début du tour
+          example: 5000
+        duration:
+          type: integer
+          format: int64
+          description: Durée en secondes depuis la position actuelle jusqu'au début du tour
+          example: 600
+        geometry:
+          type: string
+          description: Geometry de la route au format JSON (OSRM)
+        steps:
+          type: string
+          description: List des étapes de navigation (JSON string)
+        startPoint:
+          $ref: '#/components/schemas/Waypoints'
