@@ -1,4 +1,4 @@
 package com.c15tour.backend.mapper;
 
-public interface TourMapper {
+public class WaypointMapper {
 }
