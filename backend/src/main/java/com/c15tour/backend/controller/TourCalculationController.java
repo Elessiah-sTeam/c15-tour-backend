@@ -4,6 +4,7 @@ import com.c15tour.api.TourCalculationApi;
 import com.c15tour.backend.entity.Segment;
 import com.c15tour.backend.entity.Tour;
 import com.c15tour.backend.entity.Waypoint;
+import com.c15tour.backend.mapper.WaypointMapper;
 import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.backend.service.RoutingService;
 import com.c15tour.backend.service.osrm.OSRMResponse;
@@ -25,11 +26,13 @@ public class TourCalculationController implements TourCalculationApi {
     private final TourRepository tourRepository;
     private final RoutingService routingService;
     private final ObjectMapper objectMapper;
+    private final WaypointMapper waypointMapper;
 
-    public TourCalculationController(TourRepository tourRepository, RoutingService routingService, ObjectMapper objectMapper) {
+    public TourCalculationController(TourRepository tourRepository, RoutingService routingService, ObjectMapper objectMapper, WaypointMapper waypointMapper) {
         this.tourRepository = tourRepository;
         this.routingService = routingService;
         this.objectMapper = objectMapper;
+        this.waypointMapper = waypointMapper;
     }
 
     @Override
@@ -46,10 +49,8 @@ public class TourCalculationController implements TourCalculationApi {
 
         Coordinates userCoords = userPositionRequest.getCoordinates();
 
-        Coordinates startCoords = new Coordinates();
-        startCoords.setLatitude(startWaypoint.getLatitude());
-        startCoords.setLongitude(startWaypoint.getLongitude());
-
+        Waypoints startPointDto = waypointMapper.toDto(startWaypoint);
+        Coordinates startCoords = startPointDto.getCoordinates();
         OSRMResponse osrmResponse = routingService.calculateRoute(List.of(userCoords, startCoords));
 
         if (osrmResponse == null || osrmResponse.routes().isEmpty() || osrmResponse.routes() == null) {
@@ -76,9 +77,6 @@ public class TourCalculationController implements TourCalculationApi {
             e.printStackTrace();
         }
 
-        Waypoints startPointDto = new Waypoints();
-        startPointDto.setName(startWaypoint.getName());
-        startPointDto.setCoordinates(startCoords);
         response.setStartPoint(startPointDto);
 
         return ResponseEntity.ok(response);
