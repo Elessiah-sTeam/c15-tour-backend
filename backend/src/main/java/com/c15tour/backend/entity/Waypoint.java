@@ -3,6 +3,8 @@ package com.c15tour.backend.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 @Table(name = "waypoints")
@@ -27,5 +29,8 @@ public class Waypoint {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "segment_id", nullable = false)
     private Segment segment;
+
+    @Transient
+    private LocalDateTime estimatedArrival;
 
 }
