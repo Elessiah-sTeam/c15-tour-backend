@@ -21,6 +21,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,6 +78,16 @@ public class TourControllerIntegrationTest {
 
         // 4. Attach to Tour
         request.setSegments(List.of(segment));
+
+        return request;
+    }
+
+    private TourCreateRequest createTourRequestWithEta(String name, OffsetDateTime departureTime, int breakDuration) {
+        TourCreateRequest request = createTourRequest(name);
+        request.setDepartureTime(departureTime);
+
+        SegmentRequest segment = request.getSegments().get(0);
+        segment.setBreakDuration(breakDuration);
 
         return request;
     }
@@ -235,5 +246,47 @@ public class TourControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.segments[0].waypoints[0].name", is("First Waypoint")))
                 .andExpect(jsonPath("$.segments[0].waypoints[1].name", is("Second Waypoint")));
+    }
+
+    @Test
+    void createTour_WithDepartureTime_ShouldReturnComputedEtas() throws Exception {
+        OffsetDateTime departure = OffsetDateTime.parse("2024-06-01T08:00:00Z");
+        TourCreateRequest request = createTourRequestWithEta("ETA Tour", departure, 3600);
+
+        mockMvc.perform(post("/tours")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.departureTime", notNullValue()))
+                .andExpect(jsonPath("$.segments[0].breakDuration", is(3600)))
+                .andExpect(jsonPath("$.segments[0].estimatedDeparture", notNullValue()))
+                .andExpect(jsonPath("$.segments[0].waypoints[0].estimatedArrival", notNullValue()))
+                .andExpect(jsonPath("$.segments[0].waypoints[1].estimatedArrival", notNullValue()));
+    }
+
+    @Test
+    void createTour_WithoutDepartureTime_ShouldReturnNullEtas() throws Exception {
+        TourCreateRequest request = createTourRequest("No ETA Tour");
+
+        mockMvc.perform(post("/tours")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.departureTime").doesNotExist())
+                .andExpect(jsonPath("$.segments[0].estimatedDeparture").doesNotExist())
+                .andExpect(jsonPath("$.segments[0].waypoints[0].estimatedArrival").doesNotExist())
+                .andExpect(jsonPath("$.segments[0].waypoints[1].estimatedArrival").doesNotExist());
+    }
+
+    @Test
+    void createTour_WithDepartureTime_FirstWaypointShouldMatchDepartureTime() throws Exception {
+        OffsetDateTime departure = OffsetDateTime.parse("2024-06-01T08:00:00Z");
+        TourCreateRequest request = createTourRequestWithEta("ETA Departure Check", departure, 0);
+
+        mockMvc.perform(post("/tours")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.segments[0].waypoints[0].estimatedArrival", is("2024-06-01T08:00:00Z")));
     }
 }

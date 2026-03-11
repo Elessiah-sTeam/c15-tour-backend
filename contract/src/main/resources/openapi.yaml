@@ -239,6 +239,11 @@ components:
           example: "Etape 1"
         coordinates:
           $ref: "#/components/schemas/Coordinates"
+        estimatedArrival:
+          type: string
+          format: date-time
+          description: Computed estimated arrival time at this waypoint (only set when departureTime is provided)
+          example: "2024-06-01T14:30:00Z"
 
     SegmentRequest:
       type: object
@@ -254,6 +259,10 @@ components:
           minItems: 2
           items:
             $ref: "#/components/schemas/Waypoints"
+        breakDuration:
+          type: integer
+          description: How long to stay at the end of this segment in seconds (default 0)
+          example: 3600
 
     SegmentResponse:
       type: object
@@ -288,6 +297,15 @@ components:
           description: List of the points which compose the segment
           items:
             $ref: "#/components/schemas/Waypoints"
+        breakDuration:
+          type: integer
+          description: How long to stay at the end of this segment in seconds
+          example: 3600
+        estimatedDeparture:
+          type: string
+          format: date-time
+          description: Computed estimated departure time from the end of this segment (arrival at last waypoint + break duration)
+          example: "2024-06-01T16:30:00Z"
 
     TourCreateRequest:
       type: object
@@ -302,6 +320,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SegmentRequest'
+        departureTime:
+          type: string
+          format: date-time
+          description: When the tour starts (optional, required for ETA computation)
+          example: "2024-06-01T08:00:00Z"
 
     TourResponse:
       type: object
@@ -332,6 +355,11 @@ components:
           format: date-time
           example: "2024-06-01T12:00:00Z"
           description: Tour creation date and time
+        departureTime:
+          type: string
+          format: date-time
+          example: "2024-06-01T08:00:00Z"
+          description: When the tour starts (optional)
         segments:
           type: array
           items:

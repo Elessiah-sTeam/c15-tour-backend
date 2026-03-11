@@ -104,6 +104,7 @@ public class TourController implements ToursApi {
 
         int totalDist = 0;
         int totalDur = 0;
+        java.time.LocalDateTime runningTime = tour.getDepartureTime();
 
         for (Segment segment : tour.getSegments()) {
             List<Waypoint> waypoints = segment.getWaypoints();
@@ -111,8 +112,11 @@ public class TourController implements ToursApi {
                 continue; // Pas assez de waypoints pour calculer une route
             }
 
-            List<Coordinates> coords = waypoints.stream()
-                    .sorted(Comparator.comparingInt(Waypoint::getOrderIndex)) // s'assurer que les waypoints sont dans le bon ordre
+            List<Waypoint> sortedWaypoints = waypoints.stream()
+                    .sorted(Comparator.comparingInt(Waypoint::getOrderIndex))
+                    .collect(Collectors.toList());
+
+            List<Coordinates> coords = sortedWaypoints.stream()
                     .map(wp -> {
                         Coordinates c = new Coordinates();
                         c.setLatitude(wp.getLatitude());
@@ -137,12 +141,15 @@ public class TourController implements ToursApi {
                 totalDist += dist;
                 totalDur += dur;
 
+                // Store per-leg durations for ETA computation
+                List<OSRMResponse.Leg> legs = route.legs();
+
                 try {
                     String geometryJson = objectMapper.writeValueAsString(route.geometry());
                     segment.setGeometry(geometryJson);
 
-                    if (route.legs() != null) {
-                        List<OSRMResponse.Step> allSteps = route.legs().stream()
+                    if (legs != null) {
+                        List<OSRMResponse.Step> allSteps = legs.stream()
                                 .flatMap(leg -> leg.steps() != null ? leg.steps().stream() : java.util.stream.Stream.empty())
                                 .collect(Collectors.toList());
 
@@ -151,6 +158,19 @@ public class TourController implements ToursApi {
                     }
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
+                }
+
+                // Compute per-waypoint ETAs using OSRM leg durations
+                if (tour.getDepartureTime() != null && legs != null) {
+                    for (int i = 0; i < sortedWaypoints.size(); i++) {
+                        sortedWaypoints.get(i).setEstimatedArrival(runningTime);
+                        if (i < legs.size() && legs.get(i).duration() != null) {
+                            runningTime = runningTime.plusSeconds(Math.round(legs.get(i).duration()));
+                        }
+                    }
+                    int breakSecs = segment.getBreakDuration() != null ? segment.getBreakDuration() : 0;
+                    segment.setEstimatedDeparture(runningTime.plusSeconds(breakSecs));
+                    runningTime = segment.getEstimatedDeparture();
                 }
             }
         }

@@ -31,6 +31,9 @@ public class TourMapper {
 
     private void mapRequestToEntity(TourCreateRequest request, Tour tour) {
         tour.setName(request.getName());
+        tour.setDepartureTime(request.getDepartureTime() != null
+                ? request.getDepartureTime().toLocalDateTime()
+                : null);
 
         if (tour.getSegments() != null) {
             tour.getSegments().clear();
@@ -55,6 +58,7 @@ public class TourMapper {
 
         segment.setDistance(0);
         segment.setDuration(0);
+        segment.setBreakDuration(request.getBreakDuration() != null ? request.getBreakDuration() : 0);
 
         List<Waypoint> waypointEntities = new ArrayList<>();
         if (request.getWaypoints() != null) {
@@ -87,6 +91,10 @@ public class TourMapper {
 
         dto.setName(entity.getName());
 
+        if (entity.getEstimatedArrival() != null) {
+            dto.setEstimatedArrival(entity.getEstimatedArrival().atOffset(ZoneOffset.UTC));
+        }
+
         return dto;
     }
 
@@ -98,6 +106,12 @@ public class TourMapper {
         response.setGeometry(segment.getGeometry());
 
         response.setSteps(segment.getSteps());
+
+        response.setBreakDuration(segment.getBreakDuration());
+
+        if (segment.getEstimatedDeparture() != null) {
+            response.setEstimatedDeparture(segment.getEstimatedDeparture().atOffset(ZoneOffset.UTC));
+        }
 
         if (segment.getWaypoints() != null) {
             List<Waypoints> waypointDtos = segment.getWaypoints().stream()
@@ -120,6 +134,10 @@ public class TourMapper {
 
         if (entity.getCreatedAt() != null) {
             response.setCreatedAt(entity.getCreatedAt().atOffset(ZoneOffset.UTC));
+        }
+
+        if (entity.getDepartureTime() != null) {
+            response.setDepartureTime(entity.getDepartureTime().atOffset(ZoneOffset.UTC));
         }
 
         if (entity.getSegments() != null) {

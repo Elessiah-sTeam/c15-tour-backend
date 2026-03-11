@@ -36,4 +36,7 @@ public class Tour {
 
     @Column(name = "share_code", unique = true, length = 6)
     private String shareCode;
+
+    @Column(name = "departure_time")
+    private LocalDateTime departureTime;
 }

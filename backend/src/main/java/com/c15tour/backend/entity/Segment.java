@@ -5,6 +5,7 @@ import lombok.Data;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,4 +44,10 @@ public class Segment {
 
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
+
+    @Column(name = "break_duration")
+    private Integer breakDuration;
+
+    @Transient
+    private LocalDateTime estimatedDeparture;
 }
