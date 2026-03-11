@@ -14,10 +14,12 @@ import com.c15tour.model.Waypoints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Comparator;
 import java.util.List;
 
+@RestController
 public class TourCalculationController implements TourCalculationApi {
 
     private final TourRepository tourRepository;
