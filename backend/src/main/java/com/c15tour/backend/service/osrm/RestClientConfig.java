@@ -10,7 +10,7 @@ public class RestClientConfig {
 
     @Bean
     RestClient restClient(RestClient.Builder builder,
-                          @Value("${OSRM_API_URL}") String osrmUrl) {
+                          @Value("${OSRM_API_URL:http://localhost:5000}") String osrmUrl) {
         return builder
                 .baseUrl(osrmUrl)
                 .build();

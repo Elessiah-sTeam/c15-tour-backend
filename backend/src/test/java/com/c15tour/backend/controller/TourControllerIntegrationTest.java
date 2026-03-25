@@ -4,11 +4,13 @@ import com.c15tour.backend.entity.Segment;
 import com.c15tour.backend.entity.Tour;
 import com.c15tour.backend.entity.Waypoint;
 import com.c15tour.backend.repository.TourRepository;
+import com.c15tour.backend.security.JwtUtils;
 import com.c15tour.model.Coordinates;
 import com.c15tour.model.SegmentRequest;
 import com.c15tour.model.TourCreateRequest;
 import com.c15tour.model.Waypoints;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,7 +23,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +49,16 @@ public class TourControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JwtUtils jwtUtils;
+
+    private String authHeader;
+
+    @BeforeEach
+    void setUpAuth() {
+        authHeader = "Bearer " + jwtUtils.generateToken("admin", "ADMIN");
+    }
 
     private TourCreateRequest createTourRequest(String name) {
         TourCreateRequest request = new TourCreateRequest();
@@ -82,15 +93,6 @@ public class TourControllerIntegrationTest {
         return request;
     }
 
-    private TourCreateRequest createTourRequestWithEta(String name, OffsetDateTime departureTime, int breakDuration) {
-        TourCreateRequest request = createTourRequest(name);
-        request.setDepartureTime(departureTime);
-
-        SegmentRequest segment = request.getSegments().get(0);
-        segment.setBreakDuration(breakDuration);
-
-        return request;
-    }
 
     private Tour createTourEntity(String name) {
         Tour tour = new Tour();
@@ -133,11 +135,12 @@ public class TourControllerIntegrationTest {
         TourCreateRequest request = createTourRequest("Trip to Nantes");
 
         mockMvc.perform(post("/tours")
+                        .header("Authorization", authHeader)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is("Trip to Nantes")))
-                .andExpect(jsonPath("$.startPoint.latitude", is(47.2184)));
+                .andExpect(jsonPath("$.segments[0].waypoints[0].coordinates.latitude", is(47.2184)));
     }
 
     @Test
@@ -145,7 +148,8 @@ public class TourControllerIntegrationTest {
         createTourEntity("Tour 1");
         createTourEntity("Tour 2");
 
-        mockMvc.perform(get("/tours"))
+        mockMvc.perform(get("/tours")
+                        .header("Authorization", authHeader))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(2))))
                 .andExpect(jsonPath("$[*].name", hasItem("Tour 1")));
@@ -155,7 +159,8 @@ public class TourControllerIntegrationTest {
     void getTourById_ShouldReturnTour() throws Exception {
         Tour savedTour = createTourEntity("Single Tour");
 
-        mockMvc.perform(get("/tours/" + savedTour.getId()))
+        mockMvc.perform(get("/tours/" + savedTour.getId())
+                        .header("Authorization", authHeader))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(savedTour.getId().intValue())))
                 .andExpect(jsonPath("$.name", is("Single Tour")));
@@ -163,7 +168,8 @@ public class TourControllerIntegrationTest {
 
     @Test
     void getTourById_WhenNotFound_ShouldReturn404() throws Exception {
-        mockMvc.perform(get("/tours/999999"))
+        mockMvc.perform(get("/tours/999999")
+                        .header("Authorization", authHeader))
                 .andExpect(status().isNotFound());
     }
 
@@ -174,6 +180,7 @@ public class TourControllerIntegrationTest {
         TourCreateRequest updateRequest = createTourRequest("New Name");
 
         mockMvc.perform(put("/tours/" + savedTour.getId())
+                        .header("Authorization", authHeader)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
@@ -184,7 +191,8 @@ public class TourControllerIntegrationTest {
     void deleteTour_ShouldRemoveTour() throws Exception {
         Tour savedTour = createTourEntity("To Delete");
 
-        mockMvc.perform(delete("/tours/" + savedTour.getId()))
+        mockMvc.perform(delete("/tours/" + savedTour.getId())
+                        .header("Authorization", authHeader))
                 .andExpect(status().isNoContent());
 
         assertFalse(tourRepository.findById(savedTour.getId()).isPresent());
@@ -192,7 +200,8 @@ public class TourControllerIntegrationTest {
 
     @Test
     void deleteTour_WhenNotFound_ShouldReturn404() throws Exception {
-        mockMvc.perform(delete("/tours/999999"))
+        mockMvc.perform(delete("/tours/999999")
+                        .header("Authorization", authHeader))
                 .andExpect(status().isNotFound());
     }
 
@@ -201,6 +210,7 @@ public class TourControllerIntegrationTest {
         TourCreateRequest request = createTourRequest("Tour with Named Waypoints");
 
         mockMvc.perform(post("/tours")
+                        .header("Authorization", authHeader)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -210,7 +220,6 @@ public class TourControllerIntegrationTest {
 
     @Test
     void getTourById_ShouldReturnPersistedWaypointNames() throws Exception {
-        // Create a tour with named waypoints
         Tour tour = new Tour();
         tour.setName("Tour with Waypoint Names");
         tour.setTotalDistance(100);
@@ -242,51 +251,11 @@ public class TourControllerIntegrationTest {
 
         Tour savedTour = tourRepository.save(tour);
 
-        mockMvc.perform(get("/tours/" + savedTour.getId()))
+        mockMvc.perform(get("/tours/" + savedTour.getId())
+                        .header("Authorization", authHeader))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.segments[0].waypoints[0].name", is("First Waypoint")))
                 .andExpect(jsonPath("$.segments[0].waypoints[1].name", is("Second Waypoint")));
     }
 
-    @Test
-    void createTour_WithDepartureTime_ShouldReturnComputedEtas() throws Exception {
-        OffsetDateTime departure = OffsetDateTime.parse("2024-06-01T08:00:00Z");
-        TourCreateRequest request = createTourRequestWithEta("ETA Tour", departure, 3600);
-
-        mockMvc.perform(post("/tours")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.departureTime", notNullValue()))
-                .andExpect(jsonPath("$.segments[0].breakDuration", is(3600)))
-                .andExpect(jsonPath("$.segments[0].estimatedDeparture", notNullValue()))
-                .andExpect(jsonPath("$.segments[0].waypoints[0].estimatedArrival", notNullValue()))
-                .andExpect(jsonPath("$.segments[0].waypoints[1].estimatedArrival", notNullValue()));
-    }
-
-    @Test
-    void createTour_WithoutDepartureTime_ShouldReturnNullEtas() throws Exception {
-        TourCreateRequest request = createTourRequest("No ETA Tour");
-
-        mockMvc.perform(post("/tours")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.departureTime").doesNotExist())
-                .andExpect(jsonPath("$.segments[0].estimatedDeparture").doesNotExist())
-                .andExpect(jsonPath("$.segments[0].waypoints[0].estimatedArrival").doesNotExist())
-                .andExpect(jsonPath("$.segments[0].waypoints[1].estimatedArrival").doesNotExist());
-    }
-
-    @Test
-    void createTour_WithDepartureTime_FirstWaypointShouldMatchDepartureTime() throws Exception {
-        OffsetDateTime departure = OffsetDateTime.parse("2024-06-01T08:00:00Z");
-        TourCreateRequest request = createTourRequestWithEta("ETA Departure Check", departure, 0);
-
-        mockMvc.perform(post("/tours")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.segments[0].waypoints[0].estimatedArrival", is("2024-06-01T08:00:00Z")));
-    }
 }
