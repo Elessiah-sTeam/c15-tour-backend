@@ -1,15 +1,19 @@
-# backend/Dockerfile
-
-# On part d'une image Java 21 légère
-FROM eclipse-temurin:21-jre-alpine
-
+# --- Stage 1: Build ---
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
+# Copy all pom files first for layer caching
+COPY pom.xml .
+COPY contract/pom.xml contract/
+COPY backend/pom.xml backend/
+RUN mvn dependency:go-offline -q
+# Copy sources and build
+COPY contract/src contract/src
+COPY backend/src backend/src
+RUN mvn package -DskipTests -q
 
-# On copie le JAR généré
-COPY target/*.jar app.jar
-
-# On expose le port 8080
+# --- Stage 2: Run ---
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=build /app/backend/target/*.jar app.jar
 EXPOSE 8080
-
-# On lance l'application avec le profil "docker" pour la config BDD
 ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=docker"]
