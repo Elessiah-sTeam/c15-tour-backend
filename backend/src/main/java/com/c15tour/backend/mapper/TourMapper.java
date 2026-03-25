@@ -58,6 +58,11 @@ public abstract class TourMapper {
     @Mapping(target = "totalDuration", constant = "0")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "shareCode", ignore = true)
+    @Mapping(target = "organiserCode", ignore = true)
+    @Mapping(target = "organiserJoined", ignore = true)
+    @Mapping(target = "organiserSessionToken", ignore = true)
+    @Mapping(target = "organiserLat", ignore = true)
+    @Mapping(target = "organiserLng", ignore = true)
     @Mapping(target = "segments", ignore = true)
     @Mapping(target = "departureTime", expression = "java(request.getDepartureTime() != null ? request.getDepartureTime().toLocalDateTime() : null)")
     public abstract Tour toEntity(TourCreateRequest request);

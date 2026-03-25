@@ -46,6 +46,7 @@ public class TourController implements ToursApi {
         calculateTourRoutes(tourEntity);
 
         tourEntity.setShareCode(shareCodeService.generateUniqueShareCode());
+        tourEntity.setOrganiserCode(shareCodeService.generateUniqueOrganiserCode());
 
         Tour savedTour = tourRepository.save(tourEntity);
         return new ResponseEntity<>(tourMapper.toResponse(savedTour), HttpStatus.CREATED);
