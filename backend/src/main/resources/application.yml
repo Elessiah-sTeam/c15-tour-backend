@@ -9,3 +9,11 @@ spring:
 allowed:
   origins: ${ALLOWED_ORIGINS:http://localhost}
 
+# ── Security ──
+app:
+  security:
+    admin-username: ${ADMIN_USERNAME:admin}
+    admin-password: ${ADMIN_PASSWORD:admin}
+    jwt-secret: ${JWT_SECRET:changeMeInProductionThisKeyMustBeAtLeast256BitsLong!!}
+    jwt-expiration-ms: 86400000  # 24 heures
+
