@@ -18,14 +18,27 @@ public class ShareCodeService {
 
     public String generateUniqueShareCode() {
         while (true) {
-            StringBuilder sb = new StringBuilder(6);
-            for (int i = 0; i < 6; i++) {
-                sb.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
-            }
-            String shareCode = sb.toString();
-            if (tourRepository.findByShareCode(shareCode).isEmpty()) {
-                return shareCode;
+            String code = generateCode();
+            if (tourRepository.findByShareCode(code).isEmpty()) {
+                return code;
             }
         }
+    }
+
+    public String generateUniqueOrganiserCode() {
+        while (true) {
+            String code = generateCode();
+            if (tourRepository.findByOrganiserCode(code).isEmpty()) {
+                return code;
+            }
+        }
+    }
+
+    private String generateCode() {
+        StringBuilder sb = new StringBuilder(6);
+        for (int i = 0; i < 6; i++) {
+            sb.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
+        }
+        return sb.toString();
     }
 }

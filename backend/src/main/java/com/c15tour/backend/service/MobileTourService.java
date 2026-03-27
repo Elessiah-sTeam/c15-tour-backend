@@ -1,0 +1,110 @@
+package com.c15tour.backend.service;
+
+import com.c15tour.backend.entity.Tour;
+import com.c15tour.backend.repository.TourRepository;
+import com.c15tour.model.JoinResponse;
+import com.c15tour.model.OrganiserPositionRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+@Service
+public class MobileTourService {
+
+    private final TourRepository tourRepository;
+    private final Map<Long, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
+
+    public MobileTourService(TourRepository tourRepository) {
+        this.tourRepository = tourRepository;
+    }
+
+    public JoinResponse join(String code) {
+        // Check organiser code first
+        return tourRepository.findByOrganiserCode(code)
+                .map(tour -> {
+                    if (tour.isOrganiserJoined()) {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Organiser already joined");
+                    }
+                    String sessionToken = UUID.randomUUID().toString();
+                    tour.setOrganiserJoined(true);
+                    tour.setOrganiserSessionToken(sessionToken);
+                    tourRepository.save(tour);
+
+                    JoinResponse response = new JoinResponse();
+                    response.setRole(JoinResponse.RoleEnum.ORGANISER);
+                    response.setSessionToken(sessionToken);
+                    return response;
+                })
+                .orElseGet(() -> tourRepository.findByShareCode(code)
+                        .map(tour -> {
+                            JoinResponse response = new JoinResponse();
+                            response.setRole(JoinResponse.RoleEnum.PARTICIPANT);
+                            return response;
+                        })
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid code")));
+    }
+
+    public void updateOrganiserPosition(String sessionToken, OrganiserPositionRequest body) {
+        Tour tour = tourRepository.findByOrganiserSessionToken(sessionToken)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session token"));
+        tour.setOrganiserLat(body.getLatitude());
+        tour.setOrganiserLng(body.getLongitude());
+        tourRepository.save(tour);
+        pushToEmitters(tour.getId(), body.getLatitude(), body.getLongitude());
+    }
+
+    public SseEmitter streamOrganiserPosition(String shareCode) {
+        Tour tour = tourRepository.findByShareCode(shareCode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tour not found"));
+
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        emitters.computeIfAbsent(tour.getId(), k -> new CopyOnWriteArrayList<>()).add(emitter);
+
+        emitter.onCompletion(() -> removeEmitter(tour.getId(), emitter));
+        emitter.onTimeout(() -> removeEmitter(tour.getId(), emitter));
+
+        // Send current position immediately if already available
+        if (tour.getOrganiserLat() != null && tour.getOrganiserLng() != null) {
+            try {
+                emitter.send(SseEmitter.event().data(
+                        Map.of("latitude", tour.getOrganiserLat(), "longitude", tour.getOrganiserLng())
+                ));
+            } catch (IOException e) {
+                emitter.complete();
+            }
+        }
+
+        return emitter;
+    }
+
+    private void pushToEmitters(Long tourId, double lat, double lng) {
+        List<SseEmitter> tourEmitters = emitters.get(tourId);
+        if (tourEmitters == null) return;
+
+        List<SseEmitter> dead = new ArrayList<>();
+        for (SseEmitter emitter : tourEmitters) {
+            try {
+                emitter.send(SseEmitter.event().data(Map.of("latitude", lat, "longitude", lng)));
+            } catch (IOException e) {
+                dead.add(emitter);
+            }
+        }
+        tourEmitters.removeAll(dead);
+    }
+
+    private void removeEmitter(Long tourId, SseEmitter emitter) {
+        List<SseEmitter> tourEmitters = emitters.get(tourId);
+        if (tourEmitters != null) {
+            tourEmitters.remove(emitter);
+        }
+    }
+}

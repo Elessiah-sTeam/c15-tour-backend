@@ -35,6 +35,12 @@ public class SecurityConfig {
                         .requestMatchers("/auth/login").permitAll()
 
                         .requestMatchers(
+                                "/tours/share/*/join",
+                                "/tours/share/*/organiser-position",
+                                "/tours/share/*/organiser-position/stream"
+                        ).permitAll()
+
+                        .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",

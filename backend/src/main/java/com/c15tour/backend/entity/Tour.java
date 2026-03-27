@@ -37,6 +37,21 @@ public class Tour {
     @Column(name = "share_code", unique = true, length = 6)
     private String shareCode;
 
+    @Column(name = "organiser_code", unique = true, length = 6)
+    private String organiserCode;
+
+    @Column(name = "organiser_joined", nullable = false)
+    private boolean organiserJoined = false;
+
+    @Column(name = "organiser_session_token", unique = true)
+    private String organiserSessionToken;
+
+    @Column(name = "organiser_lat")
+    private Double organiserLat;
+
+    @Column(name = "organiser_lng")
+    private Double organiserLng;
+
     @Column(name = "departure_time")
     private LocalDateTime departureTime;
 }

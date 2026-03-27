@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface TourRepository extends JpaRepository<Tour, Long> {
     Optional<Tour> findByShareCode(String shareCode);
+    Optional<Tour> findByOrganiserCode(String organiserCode);
+    Optional<Tour> findByOrganiserSessionToken(String organiserSessionToken);
 }
