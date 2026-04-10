@@ -48,6 +48,6 @@ public class Segment {
     @Column(name = "break_duration")
     private Integer breakDuration;
 
-    @Transient
+    @Column(name = "estimated_departure")
     private LocalDateTime estimatedDeparture;
 }
