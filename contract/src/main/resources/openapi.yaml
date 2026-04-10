@@ -109,6 +109,34 @@ paths:
         '404':
           description: Tour not found
 
+    patch:
+      summary: Update departure time and recompute ETAs without calling OSRM
+      operationId: patchTourDepartureTime
+      tags:
+        - Tours
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchDepartureTimeRequest'
+      responses:
+        '200':
+          description: Tour updated with recalculated ETAs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TourResponse'
+        '404':
+          description: Tour not found
+
     delete:
       summary: Delete a tour by ID
       operationId: deleteTour
@@ -378,6 +406,17 @@ components:
           format: date-time
           description: Computed estimated departure time from the end of this segment (arrival at last waypoint + break duration)
           example: "2024-06-01T16:30:00Z"
+
+    PatchDepartureTimeRequest:
+      type: object
+      required:
+        - departureTime
+      properties:
+        departureTime:
+          type: string
+          format: date-time
+          description: New departure time — ETAs are recomputed from stored segment durations
+          example: "2024-06-01T09:00:00Z"
 
     TourCreateRequest:
       type: object
