@@ -10,6 +10,7 @@ import com.c15tour.backend.service.RoutingService;
 import com.c15tour.backend.service.ShareCodeService;
 import com.c15tour.backend.service.osrm.OSRMResponse;
 import com.c15tour.model.Coordinates;
+import com.c15tour.model.PatchDepartureTimeRequest;
 import com.c15tour.model.TourCreateRequest;
 import com.c15tour.model.TourResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -88,6 +90,18 @@ public class TourController implements ToursApi {
 
                     Tour savedTour = tourRepository.save(existingTour);
                     return ResponseEntity.ok(tourMapper.toResponse(savedTour));
+                })
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @Override
+    public ResponseEntity<TourResponse> patchTourDepartureTime(Long id, PatchDepartureTimeRequest request) {
+        return tourRepository.findById(id)
+                .map(tour -> {
+                    tour.setDepartureTime(request.getDepartureTime().toLocalDateTime());
+                    recalculateEtas(tour);
+                    tourRepository.save(tour);
+                    return ResponseEntity.ok(tourMapper.toResponse(tour));
                 })
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -178,5 +192,42 @@ public class TourController implements ToursApi {
 
         tour.setTotalDistance(totalDist);
         tour.setTotalDuration(totalDur);
+    }
+
+    /**
+     * Recomputes per-waypoint ETAs and per-segment estimatedDeparture from stored
+     * segment durations — no OSRM call. Waypoint ETAs are distributed linearly
+     * across each segment's total duration.
+     */
+    private void recalculateEtas(Tour tour) {
+        if (tour.getDepartureTime() == null || tour.getSegments() == null) return;
+
+        LocalDateTime runningTime = tour.getDepartureTime();
+
+        List<Segment> sortedSegments = tour.getSegments().stream()
+                .sorted(Comparator.comparingInt(Segment::getOrderIndex))
+                .collect(Collectors.toList());
+
+        for (Segment segment : sortedSegments) {
+            List<Waypoint> waypoints = segment.getWaypoints();
+            if (waypoints == null || waypoints.isEmpty()) continue;
+
+            List<Waypoint> sorted = waypoints.stream()
+                    .sorted(Comparator.comparingInt(Waypoint::getOrderIndex))
+                    .collect(Collectors.toList());
+
+            int n = sorted.size();
+            int segDur = segment.getDuration() != null ? segment.getDuration() : 0;
+
+            for (int i = 0; i < n; i++) {
+                long offset = n > 1 ? (long) i * segDur / (n - 1) : 0;
+                sorted.get(i).setEstimatedArrival(runningTime.plusSeconds(offset));
+            }
+
+            runningTime = runningTime.plusSeconds(segDur);
+            int breakSecs = segment.getBreakDuration() != null ? segment.getBreakDuration() : 0;
+            segment.setEstimatedDeparture(runningTime.plusSeconds(breakSecs));
+            runningTime = segment.getEstimatedDeparture();
+        }
     }
 }
