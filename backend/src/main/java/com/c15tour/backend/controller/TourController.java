@@ -12,9 +12,12 @@ import com.c15tour.backend.service.osrm.OSRMResponse;
 import com.c15tour.model.Coordinates;
 import com.c15tour.model.PatchDepartureTimeRequest;
 import com.c15tour.model.TourCreateRequest;
+import com.c15tour.model.TourPageResponse;
 import com.c15tour.model.TourResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -65,11 +68,19 @@ public class TourController implements ToursApi {
     }
 
     @Override
-    public ResponseEntity<List<TourResponse>> getAllTours() {
-        List<TourResponse> tourResponses = tourRepository.findAll().stream()
-                .map(tourMapper::toResponse)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(tourResponses);
+    public ResponseEntity<TourPageResponse> getAllTours(Integer page, Integer size) {
+        int pageNum = page != null ? page : 0;
+        int pageSize = size != null ? size : 20;
+
+        Page<Tour> tourPage = tourRepository.findAll(PageRequest.of(pageNum, pageSize));
+
+        TourPageResponse response = new TourPageResponse();
+        response.setContent(tourPage.getContent().stream().map(tourMapper::toResponse).collect(Collectors.toList()));
+        response.setTotalElements(tourPage.getTotalElements());
+        response.setTotalPages(tourPage.getTotalPages());
+        response.setPage(tourPage.getNumber());
+
+        return ResponseEntity.ok(response);
     }
 
     @Override

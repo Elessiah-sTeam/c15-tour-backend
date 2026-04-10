@@ -26,6 +26,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.time.OffsetDateTime;
+
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -144,15 +146,54 @@ public class TourControllerIntegrationTest {
     }
 
     @Test
-    void getAllTours_ShouldReturnList() throws Exception {
+    void getAllTours_ShouldReturnPaginatedResponse() throws Exception {
         createTourEntity("Tour 1");
         createTourEntity("Tour 2");
 
         mockMvc.perform(get("/tours")
                         .header("Authorization", authHeader))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(2))))
-                .andExpect(jsonPath("$[*].name", hasItem("Tour 1")));
+                .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(2))))
+                .andExpect(jsonPath("$.content[*].name", hasItem("Tour 1")))
+                .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(2)))
+                .andExpect(jsonPath("$.totalPages", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.page", is(0)));
+    }
+
+    @Test
+    void getAllTours_WithPageAndSize_ShouldReturnRequestedPage() throws Exception {
+        for (int i = 1; i <= 5; i++) createTourEntity("Tour " + i);
+
+        mockMvc.perform(get("/tours?page=0&size=2")
+                        .header("Authorization", authHeader))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.page", is(0)));
+    }
+
+    @Test
+    void patchTourDepartureTime_ShouldUpdateDepartureTime() throws Exception {
+        Tour savedTour = createTourEntity("Tour to patch");
+
+        String body = "{\"departureTime\": \"2024-06-01T10:00:00Z\"}";
+
+        mockMvc.perform(patch("/tours/" + savedTour.getId())
+                        .header("Authorization", authHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.departureTime", is("2024-06-01T10:00:00Z")));
+    }
+
+    @Test
+    void patchTourDepartureTime_WhenNotFound_ShouldReturn404() throws Exception {
+        String body = "{\"departureTime\": \"2024-06-01T10:00:00Z\"}";
+
+        mockMvc.perform(patch("/tours/999999")
+                        .header("Authorization", authHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isNotFound());
     }
 
     @Test

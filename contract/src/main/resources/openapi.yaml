@@ -45,19 +45,35 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     get:
-      summary: Get all tours
+      summary: Get paginated tours
       operationId: getAllTours
       tags:
         - Tours
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: Page number (0-based)
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of tours per page
       responses:
         '200':
-          description: List of tours
+          description: Paginated list of tours
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TourResponse'
+                $ref: '#/components/schemas/TourPageResponse'
   /tours/{id}:
     get:
       summary: Get a tour by ID
@@ -406,6 +422,29 @@ components:
           format: date-time
           description: Computed estimated departure time from the end of this segment (arrival at last waypoint + break duration)
           example: "2024-06-01T16:30:00Z"
+
+    TourPageResponse:
+      type: object
+      required:
+        - content
+        - totalElements
+        - totalPages
+        - page
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TourResponse'
+        totalElements:
+          type: integer
+          format: int64
+          example: 42
+        totalPages:
+          type: integer
+          example: 3
+        page:
+          type: integer
+          example: 0
 
     PatchDepartureTimeRequest:
       type: object
