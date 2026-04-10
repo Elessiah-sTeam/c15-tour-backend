@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ public class MobileTourService {
                     String sessionToken = UUID.randomUUID().toString();
                     tour.setOrganiserJoined(true);
                     tour.setOrganiserSessionToken(sessionToken);
+                    tour.setOrganiserTokenExpiresAt(LocalDateTime.now().plusHours(24));
                     tourRepository.save(tour);
 
                     JoinResponse response = new JoinResponse();
@@ -56,6 +58,9 @@ public class MobileTourService {
     public void updateOrganiserPosition(String sessionToken, OrganiserPositionRequest body) {
         Tour tour = tourRepository.findByOrganiserSessionToken(sessionToken)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session token"));
+        if (tour.getOrganiserTokenExpiresAt() == null || LocalDateTime.now().isAfter(tour.getOrganiserTokenExpiresAt())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Session token expired");
+        }
         tour.setOrganiserLat(body.getLatitude());
         tour.setOrganiserLng(body.getLongitude());
         tourRepository.save(tour);

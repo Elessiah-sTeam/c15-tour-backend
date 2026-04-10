@@ -46,6 +46,9 @@ public class Tour {
     @Column(name = "organiser_session_token", unique = true)
     private String organiserSessionToken;
 
+    @Column(name = "organiser_token_expires_at")
+    private LocalDateTime organiserTokenExpiresAt;
+
     @Column(name = "organiser_lat")
     private Double organiserLat;
 
