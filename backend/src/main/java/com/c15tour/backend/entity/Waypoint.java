@@ -30,7 +30,7 @@ public class Waypoint {
     @JoinColumn(name = "segment_id", nullable = false)
     private Segment segment;
 
-    @Transient
+    @Column(name = "estimated_arrival")
     private LocalDateTime estimatedArrival;
 
 }
