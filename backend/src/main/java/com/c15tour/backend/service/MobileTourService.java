@@ -29,30 +29,23 @@ public class MobileTourService {
     }
 
     public JoinResponse join(String code) {
-        // Check organiser code first
-        return tourRepository.findByOrganiserCode(code)
-                .map(tour -> {
-                    if (tour.isOrganiserJoined()) {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Organiser already joined");
-                    }
-                    String sessionToken = UUID.randomUUID().toString();
-                    tour.setOrganiserJoined(true);
-                    tour.setOrganiserSessionToken(sessionToken);
-                    tour.setOrganiserTokenExpiresAt(LocalDateTime.now().plusHours(24));
-                    tourRepository.save(tour);
+        Tour tour = tourRepository.findByOrganiserCode(code)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid organiser code"));
 
-                    JoinResponse response = new JoinResponse();
-                    response.setRole(JoinResponse.RoleEnum.ORGANISER);
-                    response.setSessionToken(sessionToken);
-                    return response;
-                })
-                .orElseGet(() -> tourRepository.findByShareCode(code)
-                        .map(tour -> {
-                            JoinResponse response = new JoinResponse();
-                            response.setRole(JoinResponse.RoleEnum.PARTICIPANT);
-                            return response;
-                        })
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid code")));
+        if (tour.isOrganiserJoined()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Organiser already joined");
+        }
+
+        String sessionToken = UUID.randomUUID().toString();
+        tour.setOrganiserJoined(true);
+        tour.setOrganiserSessionToken(sessionToken);
+        tour.setOrganiserTokenExpiresAt(LocalDateTime.now().plusHours(24));
+        tourRepository.save(tour);
+
+        JoinResponse response = new JoinResponse();
+        response.setRole(JoinResponse.RoleEnum.ORGANISER);
+        response.setSessionToken(sessionToken);
+        return response;
     }
 
     public void updateOrganiserPosition(String sessionToken, OrganiserPositionRequest body) {
