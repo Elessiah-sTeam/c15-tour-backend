@@ -2,6 +2,7 @@ package com.c15tour.backend.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -33,6 +34,9 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/tours/share/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/tours/*/route-to-start").permitAll()
 
                         .requestMatchers(
                                 "/tours/share/*/join",
