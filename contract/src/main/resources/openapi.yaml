@@ -265,6 +265,122 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /tours/share/{code}/audio-messages:
+    post:
+      summary: Send an audio message (organiser only)
+      operationId: postAudioMessage
+      tags:
+        - Mobile
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Session-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Audio message created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudioMessageResponse'
+        '400':
+          description: Invalid file format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid or expired session token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Token does not belong to this tour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Tour not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: Get audio message history for a tour
+      operationId: getAudioMessages
+      tags:
+        - Mobile
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of audio messages ordered by createdAt DESC
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AudioMessageResponse'
+        '404':
+          description: Tour not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /audio/{filename}:
+    get:
+      summary: Download an audio file
+      operationId: getAudioFile
+      tags:
+        - Mobile
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OGG audio file
+          content:
+            audio/ogg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+
   /tours/{id}/route-to-start:
     post:
       summary: Get route from current location to the start of the tour
@@ -555,6 +671,21 @@ components:
       properties:
         coordinates:
           $ref: '#/components/schemas/Coordinates'
+
+    AudioMessageResponse:
+      type: object
+      required: [id, url, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        url:
+          type: string
+          description: Download URL of the audio file
+          example: "/audio/a3f1c2d4-uuid.ogg"
+        createdAt:
+          type: string
+          format: date-time
 
     RouteToStartResponse:
       type: object
