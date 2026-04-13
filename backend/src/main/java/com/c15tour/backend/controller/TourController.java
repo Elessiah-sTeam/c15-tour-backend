@@ -120,7 +120,11 @@ public class TourController implements ToursApi {
     @Override
     public ResponseEntity<TourResponse> getTourByShareCode(String code) {
         return tourRepository.findByShareCode(code)
-                .map(tourMapper::toResponse)
+                .map(tour -> {
+                    TourResponse response = tourMapper.toResponse(tour);
+                    response.setOrganiserCode(null);
+                    return response;
+                })
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }

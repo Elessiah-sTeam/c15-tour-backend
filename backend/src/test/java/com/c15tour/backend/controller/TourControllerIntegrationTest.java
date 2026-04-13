@@ -299,4 +299,30 @@ public class TourControllerIntegrationTest {
                 .andExpect(jsonPath("$.segments[0].waypoints[1].name", is("Second Waypoint")));
     }
 
+    @Test
+    void getTourByShareCode_PublicEndpoint_ShouldNotExposeOrganiserCode() throws Exception {
+        Tour savedTour = createTourEntity("Tour Share Code Test");
+        savedTour.setShareCode("PUBLI1");
+        savedTour.setOrganiserCode("SECRET");
+        tourRepository.save(savedTour);
+
+        mockMvc.perform(get("/tours/share/PUBLI1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.shareCode", is("PUBLI1")))
+                .andExpect(jsonPath("$.organiserCode").doesNotExist());
+    }
+
+    @Test
+    void getTourById_AdminEndpoint_ShouldExposeOrganiserCode() throws Exception {
+        Tour savedTour = createTourEntity("Tour Admin Code Test");
+        savedTour.setShareCode("ADMIN1");
+        savedTour.setOrganiserCode("ORGADM");
+        tourRepository.save(savedTour);
+
+        mockMvc.perform(get("/tours/" + savedTour.getId())
+                        .header("Authorization", authHeader))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organiserCode", is("ORGADM")));
+    }
+
 }
