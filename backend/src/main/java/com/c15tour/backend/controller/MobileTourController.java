@@ -27,7 +27,7 @@ public class MobileTourController implements MobileApi {
 
     @Override
     public ResponseEntity<Void> updateOrganiserPosition(String code, String xSessionToken, OrganiserPositionRequest body) {
-        mobileTourService.updateOrganiserPosition(xSessionToken, body);
+        mobileTourService.updateOrganiserPosition(code, xSessionToken, body);
         return ResponseEntity.noContent().build();
     }
 

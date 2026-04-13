@@ -48,11 +48,14 @@ public class MobileTourService {
         return response;
     }
 
-    public void updateOrganiserPosition(String sessionToken, OrganiserPositionRequest body) {
+    public void updateOrganiserPosition(String code, String sessionToken, OrganiserPositionRequest body) {
         Tour tour = tourRepository.findByOrganiserSessionToken(sessionToken)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session token"));
         if (tour.getOrganiserTokenExpiresAt() == null || LocalDateTime.now().isAfter(tour.getOrganiserTokenExpiresAt())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Session token expired");
+        }
+        if (!code.equals(tour.getShareCode())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Session token does not match this tour");
         }
         tour.setOrganiserLat(body.getLatitude());
         tour.setOrganiserLng(body.getLongitude());
