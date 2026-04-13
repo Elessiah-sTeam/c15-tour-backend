@@ -30,7 +30,10 @@ public class LocalAudioStorageService implements AudioStorageService {
 
     @Override
     public String store(InputStream inputStream, String filename) {
-        Path destination = storageRoot.resolve(filename);
+        Path destination = storageRoot.resolve(filename).normalize();
+        if (!destination.startsWith(storageRoot)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid filename");
+        }
         try {
             Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
@@ -42,7 +45,10 @@ public class LocalAudioStorageService implements AudioStorageService {
     @Override
     public Resource load(String filename) {
         try {
-            Path file = storageRoot.resolve(filename);
+            Path file = storageRoot.resolve(filename).normalize();
+            if (!file.startsWith(storageRoot)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid filename");
+            }
             Resource resource = new UrlResource(file.toUri());
             if (!resource.exists()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Audio file not found");
