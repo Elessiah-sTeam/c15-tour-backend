@@ -65,7 +65,7 @@ public class AudioMessageService {
         AudioMessage message = new AudioMessage();
         message.setTour(tour);
         message.setFileName(storedFilename);
-        audioMessageRepository.save(message);
+        audioMessageRepository.saveAndFlush(message);
 
         String url = "/audio/" + storedFilename;
         mobileTourService.pushAudioMessageEvent(tour.getId(), message.getId(), url, message.getCreatedAt());
