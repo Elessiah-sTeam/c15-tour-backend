@@ -88,7 +88,7 @@ class MobileTourControllerIntegrationTest {
     void updateOrganiserPosition_WithCorrectCode_ShouldReturn204() throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("latitude", 47.5, "longitude", -1.2));
 
-        mockMvc.perform(put("/tours/share/SHARE1/organiser-position")
+        mockMvc.perform(put("/tours/share/ORG001/organiser-position")
                         .header("X-Session-Token", "valid-session-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
