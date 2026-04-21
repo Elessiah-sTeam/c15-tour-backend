@@ -91,9 +91,17 @@ public class TourService {
     }
 
     public Optional<TourResponse> getByShareCode(String code) {
-        return tourRepository.findByShareCode(code).map(tour -> {
+        Optional<Tour> byShareCode = tourRepository.findByShareCode(code);
+        if (byShareCode.isPresent()) {
+            TourResponse response = tourMapper.toResponse(byShareCode.get());
+            response.setOrganiserCode(null);
+            response.setRole(TourResponse.RoleEnum.PARTICIPANT);
+            return Optional.of(response);
+        }
+        return tourRepository.findByOrganiserCode(code).map(tour -> {
             TourResponse response = tourMapper.toResponse(tour);
             response.setOrganiserCode(null);
+            response.setRole(TourResponse.RoleEnum.ORGANISER);
             return response;
         });
     }

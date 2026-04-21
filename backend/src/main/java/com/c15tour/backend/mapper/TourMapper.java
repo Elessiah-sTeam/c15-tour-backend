@@ -31,6 +31,7 @@ public abstract class TourMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "departureTime", ignore = true)
     @Mapping(target = "segments", ignore = true)
+    @Mapping(target = "role", ignore = true)
     public abstract TourResponse toResponse(Tour entity);
 
     @AfterMapping

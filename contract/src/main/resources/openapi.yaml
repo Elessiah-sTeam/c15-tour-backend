@@ -518,6 +518,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SegmentResponse'
+        role:
+          type: string
+          enum: [PARTICIPANT, ORGANISER]
+          description: Role determined by which code was used to access the tour
 
     JoinResponse:
       type: object
