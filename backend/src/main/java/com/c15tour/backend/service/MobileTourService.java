@@ -32,10 +32,6 @@ public class MobileTourService {
         Tour tour = tourRepository.findByOrganiserCode(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid organiser code"));
 
-        if (tour.isOrganiserJoined()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Organiser already joined");
-        }
-
         String sessionToken = UUID.randomUUID().toString();
         tour.setOrganiserJoined(true);
         tour.setOrganiserSessionToken(sessionToken);
