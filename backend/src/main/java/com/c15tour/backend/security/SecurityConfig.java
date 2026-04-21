@@ -41,8 +41,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/tours/share/*/join",
                                 "/tours/share/*/organiser-position",
-                                "/tours/share/*/organiser-position/stream"
+                                "/tours/share/*/organiser-position/stream",
+                                "/tours/share/*/audio-messages"
                         ).permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/audio/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/tours/share/*/audio-messages").permitAll()
 
                         .requestMatchers(
                                 "/swagger-ui/**",

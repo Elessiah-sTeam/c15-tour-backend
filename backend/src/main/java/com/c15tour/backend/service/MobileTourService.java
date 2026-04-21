@@ -83,6 +83,28 @@ public class MobileTourService {
         return emitter;
     }
 
+    public void pushAudioMessageEvent(Long tourId, long messageId, String url, LocalDateTime createdAt) {
+        List<SseEmitter> tourEmitters = emitters.get(tourId);
+        if (tourEmitters == null) return;
+
+        Map<String, Object> event = Map.of(
+                "type", "AUDIO_MESSAGE",
+                "id", messageId,
+                "url", url,
+                "createdAt", createdAt.toString()
+        );
+
+        List<SseEmitter> dead = new ArrayList<>();
+        for (SseEmitter emitter : tourEmitters) {
+            try {
+                emitter.send(SseEmitter.event().data(event));
+            } catch (IOException e) {
+                dead.add(emitter);
+            }
+        }
+        tourEmitters.removeAll(dead);
+    }
+
     private void pushToEmitters(Long tourId, double lat, double lng) {
         List<SseEmitter> tourEmitters = emitters.get(tourId);
         if (tourEmitters == null) return;

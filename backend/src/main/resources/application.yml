@@ -9,6 +9,10 @@ spring:
 allowed:
   origins: ${ALLOWED_ORIGINS:http://localhost}
 
+audio:
+  storage:
+    path: ${AUDIO_STORAGE_PATH:/tmp/c15tour-audio}
+
 # ── Security ──
 app:
   security:
