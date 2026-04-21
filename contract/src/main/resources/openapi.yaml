@@ -219,12 +219,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '409':
-          description: Organiser already joined
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /tours/share/{code}/organiser-position:
     put:
