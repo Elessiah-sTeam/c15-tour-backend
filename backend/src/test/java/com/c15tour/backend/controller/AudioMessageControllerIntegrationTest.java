@@ -104,7 +104,7 @@ class AudioMessageControllerIntegrationTest {
                 "file", "message.ogg", "audio/ogg", "fake-ogg-content".getBytes()
         );
 
-        mockMvc.perform(multipart("/tours/share/AUDIO1/audio-messages")
+        mockMvc.perform(multipart("/tours/share/ORGAUD/audio-messages")
                         .file(file)
                         .header("X-Session-Token", "valid-audio-token"))
                 .andExpect(status().isCreated())
@@ -148,7 +148,7 @@ class AudioMessageControllerIntegrationTest {
                 "file", "message.ogg", "audio/ogg", bigFile
         );
 
-        mockMvc.perform(multipart("/tours/share/AUDIO1/audio-messages")
+        mockMvc.perform(multipart("/tours/share/ORGAUD/audio-messages")
                         .file(file)
                         .header("X-Session-Token", "valid-audio-token"))
                 .andExpect(status().isPayloadTooLarge());
@@ -160,7 +160,7 @@ class AudioMessageControllerIntegrationTest {
                 "file", "message.mp3", "audio/mpeg", "fake-mp3-content".getBytes()
         );
 
-        mockMvc.perform(multipart("/tours/share/AUDIO1/audio-messages")
+        mockMvc.perform(multipart("/tours/share/ORGAUD/audio-messages")
                         .file(file)
                         .header("X-Session-Token", "valid-audio-token"))
                 .andExpect(status().isBadRequest());
