@@ -269,6 +269,7 @@ paths:
         - name: code
           in: path
           required: true
+          description: "Organiser code of the tour"
           schema:
             type: string
         - name: X-Session-Token

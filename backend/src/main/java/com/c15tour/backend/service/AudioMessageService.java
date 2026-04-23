@@ -42,7 +42,7 @@ public class AudioMessageService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Session token expired");
         }
 
-        if (!code.equals(tour.getShareCode())) {
+        if (!code.equals(tour.getOrganiserCode())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Session token does not match this tour");
         }
 
