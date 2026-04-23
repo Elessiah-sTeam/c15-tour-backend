@@ -43,3 +43,4 @@ target/
 
 
 osrm-data/
+.claude/
