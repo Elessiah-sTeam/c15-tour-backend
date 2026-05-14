@@ -1,7 +1,9 @@
 package com.c15tour.backend.controller;
 
+import com.c15tour.backend.repository.UserRepository;
 import com.c15tour.backend.service.RoutingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -12,7 +14,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
+import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -36,13 +41,20 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // Required because BackendApplication declares a CommandLineRunner @Bean that injects RoutingService,
-    // and @WebMvcTest still processes @Bean methods on the @SpringBootApplication class.
     @MockitoBean
     private RoutingService routingService;
 
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @BeforeEach
+    void setUp() {
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
+        when(userRepository.existsByUsername(anyString())).thenReturn(false);
+    }
+
     @Test
-    void login_WithValidCredentials_ShouldReturn200WithToken() throws Exception {
+    void login_WithValidAdminCredentials_ShouldReturn200WithToken() throws Exception {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
@@ -68,5 +80,44 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("username", "hacker", "password", "admin"))))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void register_WithNewUsername_ShouldReturn201WithToken() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("username", "newuser", "password", "secret"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+    }
+
+    @Test
+    void register_WithAdminUsername_ShouldReturn409() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("username", "admin", "password", "secret"))))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void register_WithExistingUsername_ShouldReturn409() throws Exception {
+        when(userRepository.existsByUsername("taken")).thenReturn(true);
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("username", "taken", "password", "secret"))))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void register_WithBlankUsername_ShouldReturn400() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("username", "", "password", "secret"))))
+                .andExpect(status().isBadRequest());
     }
 }
