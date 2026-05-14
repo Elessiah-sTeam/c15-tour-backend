@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -77,7 +78,7 @@ public class TourService {
     }
 
     public TourPageResponse getAll(int page, int size) {
-        Page<Tour> tourPage = tourRepository.findAll(PageRequest.of(page, size));
+        Page<Tour> tourPage = tourRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
         TourPageResponse response = new TourPageResponse();
         response.setContent(tourPage.getContent().stream().map(tourMapper::toResponse).collect(Collectors.toList()));
         response.setTotalElements(tourPage.getTotalElements());
