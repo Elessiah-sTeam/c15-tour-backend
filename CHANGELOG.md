@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.2...v0.0.3) (2026-05-18)
+
+
+### Bug Fixes
+
+* remove explicit version from backend module, inherit from parent ([dc2ab11](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/dc2ab11d08e3e5a87267005d4b3f59d3d1d6debb))
+
 ## [0.0.2](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.1...v0.0.2) (2026-05-18)
 
 
