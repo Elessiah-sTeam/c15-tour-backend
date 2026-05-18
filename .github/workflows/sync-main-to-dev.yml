@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   sync:
@@ -16,10 +17,13 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Merge main into dev
+      - name: Create PR main → dev
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout dev
-          git merge origin/main --no-ff -m "chore: sync main into dev"
-          git push origin dev
+          gh pr create \
+            --base dev \
+            --head main \
+            --title "chore: sync main into dev" \
+            --body "Synchronisation automatique de main vers dev après release." \
+            || echo "PR already exists or nothing to merge"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
