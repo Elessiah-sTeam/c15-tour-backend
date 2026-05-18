@@ -1,0 +1,29 @@
+name: Sync main vers dev
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR main → dev
+        run: |
+          gh pr create \
+            --base dev \
+            --head main \
+            --title "chore: sync main into dev" \
+            --body "Synchronisation automatique de main vers dev après release." \
+            || echo "PR already exists or nothing to merge"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
