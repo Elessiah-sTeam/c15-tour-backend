@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: c15tour-backend
+  profiles:
+    active: dev
+  flyway:
+    baseline-on-migrate: true
+
+allowed:
+  origins: ${ALLOWED_ORIGINS:http://localhost}
+
+audio:
+  storage:
+    path: ${AUDIO_STORAGE_PATH:/tmp/c15tour-audio}
+
+# ── Security ──
+app:
+  security:
+    admin-username: ${ADMIN_USERNAME:admin}
+    admin-password: ${ADMIN_PASSWORD:admin}
+    jwt-secret: ${JWT_SECRET:changeMeInProductionThisKeyMustBeAtLeast256BitsLong!!}
+    jwt-expiration-ms: 86400000  # 24 heures
+

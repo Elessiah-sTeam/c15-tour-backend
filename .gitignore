@@ -22,6 +22,7 @@ build/
 # Editor / IDE
 .vscode/
 .idea/
+*.iml
 
 # OS files
 .DS_Store
@@ -29,3 +30,17 @@ Thumbs.db
 
 # Debug / Tools
 coverage/
+
+# --- Maven ---
+target/
+**/target/
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+
+
+osrm-data/
+.claude/

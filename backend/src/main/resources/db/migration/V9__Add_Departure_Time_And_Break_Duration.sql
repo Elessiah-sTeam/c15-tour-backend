@@ -1,0 +1,3 @@
+ALTER TABLE tours ADD COLUMN IF NOT EXISTS departure_time TIMESTAMP; 
+
+ALTER TABLE segment ADD COLUMN IF NOT EXISTS break_duration INTEGER; 

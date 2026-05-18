@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "ac6d1f30733c8a11cc28cfc8fc157e422200feb5",
+  "packages": {
+    ".": {
+      "release-type": "maven",
+      "package-name": "c15-tour-backend",
+      "include-component-in-tag": false
+    }
+  },
+  "plugins": [
+    {
+      "type": "maven-workspace"
+    }
+  ]
+}
