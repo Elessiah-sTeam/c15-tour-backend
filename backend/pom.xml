@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.c15tour</groupId>
 		<artifactId>c15tour-root</artifactId>
-		<version>0.0.2-SNAPSHOT</version>
+		<version>0.0.3-SNAPSHOT</version>
 	</parent>
 	<artifactId>backend</artifactId>
 	<groupId>com.c15tour</groupId>
@@ -158,4 +158,3 @@
 	</build>
 
 </project>
-
