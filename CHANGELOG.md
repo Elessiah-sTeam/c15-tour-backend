@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.3...v0.0.4) (2026-05-18)
+
+
+### Bug Fixes
+
+* add contents write permission to sync workflow ([a62c093](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/a62c0930a5c5fda8364ea5b0c6122edec235392d))
+
 ## [0.0.3](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.2...v0.0.3) (2026-05-18)
 
 
