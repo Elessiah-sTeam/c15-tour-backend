@@ -121,3 +121,24 @@ docker-compose up -d
     docker-compose down
     ```
 
+---
+
+## Semantic Versioning
+
+Le dépôt est configuré pour générer des releases sémantiques via GitHub Actions sur la branche `dev`.
+
+- `fix:` déclenche un bump `PATCH`
+- `feat:` déclenche un bump `MINOR`
+- `BREAKING CHANGE:` ou `type!:` déclenche un bump `MAJOR`
+- les tags publiés suivent le format `vX.Y.Z`
+
+Exemples de commits attendus :
+
+```text
+fix: corrige l'expiration du token organisateur
+feat: ajoute l'endpoint de partage public
+feat!: modifie le contrat de l'API de tour
+```
+
+Le workflow de release s'appuie sur `release-please`, `Conventional Commits`, met à jour les `pom.xml` et régénère `CHANGELOG.md` automatiquement.
+
