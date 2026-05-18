@@ -8,7 +8,6 @@
 	</parent>
 	<artifactId>backend</artifactId>
 	<groupId>com.c15tour</groupId>
-	<version>0.0.2</version>
 	<name>backend</name>
 	<description>Projet C15Tour</description>
 	<url/>
@@ -159,3 +158,4 @@
 	</build>
 
 </project>
+
