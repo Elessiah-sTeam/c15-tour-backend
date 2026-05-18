@@ -586,6 +586,10 @@ components:
           format: date-time
           description: When the tour starts (optional, required for ETA computation)
           example: "2024-06-01T08:00:00Z"
+        draft:
+          type: boolean
+          description: "Whether this tour is in draft state (default: true)"
+          example: false
 
     TourResponse:
       type: object
@@ -633,6 +637,10 @@ components:
           type: string
           enum: [PARTICIPANT, ORGANISER]
           description: Role determined by which code was used to access the tour
+        draft:
+          type: boolean
+          description: Whether this tour is in draft state
+          example: false
 
     JoinResponse:
       type: object

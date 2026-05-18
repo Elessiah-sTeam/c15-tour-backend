@@ -66,6 +66,7 @@ public abstract class TourMapper {
     @Mapping(target = "organiserLng", ignore = true)
     @Mapping(target = "segments", ignore = true)
     @Mapping(target = "departureTime", expression = "java(request.getDepartureTime() != null ? request.getDepartureTime().toLocalDateTime() : null)")
+    @Mapping(target = "draft", expression = "java(request.getDraft() != null ? request.getDraft() : true)")
     public abstract Tour toEntity(TourCreateRequest request);
 
     @AfterMapping
@@ -89,6 +90,9 @@ public abstract class TourMapper {
         existingTour.setDepartureTime(request.getDepartureTime() != null
                 ? request.getDepartureTime().toLocalDateTime()
                 : null);
+        if (request.getDraft() != null) {
+            existingTour.setDraft(request.getDraft());
+        }
 
         if (existingTour.getSegments() != null) {
             existingTour.getSegments().clear();

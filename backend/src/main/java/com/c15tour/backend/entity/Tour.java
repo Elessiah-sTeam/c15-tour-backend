@@ -57,4 +57,7 @@ public class Tour {
 
     @Column(name = "departure_time")
     private LocalDateTime departureTime;
+
+    @Column(name = "draft", nullable = false)
+    private boolean draft = true;
 }
