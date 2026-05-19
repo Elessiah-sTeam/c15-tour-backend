@@ -52,6 +52,9 @@ class AuthControllerTest {
     @MockitoBean
     private com.c15tour.backend.service.RoutingService routingService;
 
+    @Autowired
+    private com.c15tour.backend.security.JwtUtils jwtUtils;
+
     @BeforeEach
     void setUp() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
@@ -198,5 +201,45 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("currentPassword", "x", "newPassword", "y"))))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void changePassword_WithValidAuth_ShouldReturn200() throws Exception {
+        User user = mockUser("auth@test.com", "currentPass");
+        when(userRepository.findByEmail("auth@test.com")).thenReturn(Optional.of(user));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        String token = jwtUtils.generateToken("auth@test.com", "ADMIN");
+        mockMvc.perform(post("/auth/change-password")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("currentPassword", "currentPass", "newPassword", "newPass123"))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void changePassword_WithWrongCurrentPassword_ShouldReturn401() throws Exception {
+        User user = mockUser("auth@test.com", "currentPass");
+        when(userRepository.findByEmail("auth@test.com")).thenReturn(Optional.of(user));
+        String token = jwtUtils.generateToken("auth@test.com", "ADMIN");
+        mockMvc.perform(post("/auth/change-password")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("currentPassword", "wrong", "newPassword", "newPass123"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void changePassword_WithBlankNewPassword_ShouldReturn400() throws Exception {
+        User user = mockUser("auth@test.com", "currentPass");
+        when(userRepository.findByEmail("auth@test.com")).thenReturn(Optional.of(user));
+        String token = jwtUtils.generateToken("auth@test.com", "ADMIN");
+        mockMvc.perform(post("/auth/change-password")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("currentPassword", "currentPass", "newPassword", ""))))
+                .andExpect(status().isBadRequest());
     }
 }

@@ -60,6 +60,10 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email and password are required"));
         }
 
+        if (!request.email().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid email format"));
+        }
+
         if (userRepository.existsByEmail(request.email())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "Email already taken"));
@@ -76,6 +80,10 @@ public class AuthController {
 
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request, Authentication authentication) {
+        if (request.newPassword() == null || request.newPassword().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "New password is required"));
+        }
+
         String email = authentication.getName();
         Optional<User> dbUser = userRepository.findByEmail(email);
 
@@ -127,6 +135,10 @@ public class AuthController {
         if (user.getResetTokenExpiry() == null || LocalDateTime.now().isAfter(user.getResetTokenExpiry())) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Invalid or expired token"));
+        }
+
+        if (request.newPassword() == null || request.newPassword().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "New password is required"));
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
