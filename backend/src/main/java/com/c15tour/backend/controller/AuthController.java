@@ -28,7 +28,7 @@ import java.util.UUID;
 public class AuthController {
 
     private static final String MESSAGE_KEY = "message";
-    private static final String ROLE_ADMIN = ROLE_ADMIN;
+    private static final String ROLE_ADMIN = "ADMIN";
     private static final int MIN_PASSWORD_LENGTH = 8;
 
     private final JwtUtils jwtUtils;
