@@ -23,6 +23,9 @@ public class User {
     @Column(name = "reset_token_expiry")
     private LocalDateTime resetTokenExpiry;
 
+    @Column(name = "password_changed_at")
+    private Long passwordChangedAt;
+
     public Long getId() { return id; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
@@ -32,4 +35,6 @@ public class User {
     public void setResetToken(String resetToken) { this.resetToken = resetToken; }
     public LocalDateTime getResetTokenExpiry() { return resetTokenExpiry; }
     public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) { this.resetTokenExpiry = resetTokenExpiry; }
+    public Long getPasswordChangedAt() { return passwordChangedAt; }
+    public void setPasswordChangedAt(Long passwordChangedAt) { this.passwordChangedAt = passwordChangedAt; }
 }

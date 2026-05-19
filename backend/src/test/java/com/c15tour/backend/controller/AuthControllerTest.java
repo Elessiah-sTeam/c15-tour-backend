@@ -2,6 +2,7 @@ package com.c15tour.backend.controller;
 
 import com.c15tour.backend.entity.User;
 import com.c15tour.backend.repository.UserRepository;
+import com.c15tour.backend.security.TokenHasher;
 import com.c15tour.backend.service.MailjetEmailService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,7 +90,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("email", "test@test.com", "password", "wrong"))))
+                                Map.of("email", "test@test.com", "password", "wrongpwd"))))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("Invalid credentials"));
     }
@@ -108,7 +109,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("email", "newuser@test.com", "password", "secret"))))
+                                Map.of("email", "newuser@test.com", "password", "secret12"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").isNotEmpty());
     }
@@ -120,7 +121,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("email", "taken@test.com", "password", "secret"))))
+                                Map.of("email", "taken@test.com", "password", "secret12"))))
                 .andExpect(status().isConflict());
     }
 
@@ -129,7 +130,25 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("email", "", "password", "secret"))))
+                                Map.of("email", "", "password", "secret12"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_WithInvalidEmailFormat_ShouldReturn400() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "not-an-email", "password", "secret12"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_WithShortPassword_ShouldReturn400() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "ok@test.com", "password", "short"))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -144,7 +163,7 @@ class AuthControllerTest {
 
     @Test
     void forgotPassword_WithExistingEmail_ShouldSendResetEmail() throws Exception {
-        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(mockUser("user@test.com", "pass")));
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(mockUser("user@test.com", "pass1234")));
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         mockMvc.perform(post("/auth/forgot-password")
@@ -158,30 +177,32 @@ class AuthControllerTest {
 
     @Test
     void resetPassword_WithValidToken_ShouldReturn200() throws Exception {
-        User user = mockUser("u@test.com", "old");
-        user.setResetToken("valid-token");
+        String rawToken = "valid-token";
+        User user = mockUser("u@test.com", "oldpass12");
+        user.setResetToken(TokenHasher.sha256(rawToken));
         user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
-        when(userRepository.findByResetToken("valid-token")).thenReturn(Optional.of(user));
+        when(userRepository.findByResetToken(TokenHasher.sha256(rawToken))).thenReturn(Optional.of(user));
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         mockMvc.perform(post("/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("token", "valid-token", "newPassword", "newpass"))))
+                                Map.of("token", rawToken, "newPassword", "newpass12"))))
                 .andExpect(status().isOk());
     }
 
     @Test
     void resetPassword_WithExpiredToken_ShouldReturn400() throws Exception {
-        User user = mockUser("u@test.com", "old");
-        user.setResetToken("expired-token");
+        String rawToken = "expired-token";
+        User user = mockUser("u@test.com", "oldpass12");
+        user.setResetToken(TokenHasher.sha256(rawToken));
         user.setResetTokenExpiry(LocalDateTime.now().minusHours(1));
-        when(userRepository.findByResetToken("expired-token")).thenReturn(Optional.of(user));
+        when(userRepository.findByResetToken(TokenHasher.sha256(rawToken))).thenReturn(Optional.of(user));
 
         mockMvc.perform(post("/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("token", "expired-token", "newPassword", "newpass"))))
+                                Map.of("token", rawToken, "newPassword", "newpass12"))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -190,7 +211,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("token", "bad-token", "newPassword", "newpass"))))
+                                Map.of("token", "bad-token", "newPassword", "newpass12"))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -199,12 +220,12 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/change-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("currentPassword", "x", "newPassword", "y"))))
+                                Map.of("currentPassword", "x", "newPassword", "newpass12"))))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void changePassword_WithValidAuth_ShouldReturn200() throws Exception {
+    void changePassword_WithValidAuth_ShouldReturn200WithNewToken() throws Exception {
         User user = mockUser("auth@test.com", "currentPass");
         when(userRepository.findByEmail("auth@test.com")).thenReturn(Optional.of(user));
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -214,7 +235,8 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("currentPassword", "currentPass", "newPassword", "newPass123"))))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
     }
 
     @Test
@@ -226,7 +248,7 @@ class AuthControllerTest {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("currentPassword", "wrong", "newPassword", "newPass123"))))
+                                Map.of("currentPassword", "wrongpwd", "newPassword", "newPass123"))))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -241,5 +263,20 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("currentPassword", "currentPass", "newPassword", ""))))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void authenticatedRequest_AfterPasswordChange_ShouldRejectOldToken() throws Exception {
+        String oldToken = jwtUtils.generateToken("rotated@test.com", "ADMIN");
+        User user = mockUser("rotated@test.com", "currentPass");
+        user.setPasswordChangedAt(Long.MAX_VALUE);
+        when(userRepository.findByEmail("rotated@test.com")).thenReturn(Optional.of(user));
+
+        mockMvc.perform(post("/auth/change-password")
+                        .header("Authorization", "Bearer " + oldToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("currentPassword", "currentPass", "newPassword", "newPass123"))))
+                .andExpect(status().isForbidden());
     }
 }
