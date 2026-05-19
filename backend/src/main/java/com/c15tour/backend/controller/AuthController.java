@@ -60,7 +60,9 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email and password are required"));
         }
 
-        if (!request.email().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+        int atIdx = request.email().indexOf('@');
+        if (atIdx <= 0 || atIdx >= request.email().length() - 1
+                || request.email().lastIndexOf('.') <= atIdx) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid email format"));
         }
 
