@@ -23,6 +23,6 @@ app:
 
 # ── Mailjet ──
 mailjet:
-  api-key: ${MAILJET_API_KEY}
-  secret-key: ${MAILJET_SECRET_KEY}
+  api-key: ${MAILJET_API_KEY:}
+  secret-key: ${MAILJET_SECRET_KEY:}
   from-email: noreply@c15tour.com
