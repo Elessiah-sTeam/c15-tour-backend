@@ -49,6 +49,9 @@ class AuthControllerTest {
     @MockitoBean
     private UserRepository userRepository;
 
+    @MockitoBean
+    private com.c15tour.backend.service.RoutingService routingService;
+
     @BeforeEach
     void setUp() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
