@@ -10,9 +10,3 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: true
-
-# -- Mailjet : définir MAILJET_API_KEY et MAILJET_SECRET_KEY dans l'environnement local
-# Ne jamais committer les clés en dur ici — utiliser un .env ou les variables d'env du système
-mailjet:
-  api-key: ${MAILJET_API_KEY}
-  secret-key: ${MAILJET_SECRET_KEY}
