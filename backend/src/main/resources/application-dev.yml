@@ -11,7 +11,8 @@ spring:
       ddl-auto: none
     show-sql: true
 
-# -- Mailjet (dev defaults - use env vars in prod)
+# -- Mailjet : définir MAILJET_API_KEY et MAILJET_SECRET_KEY dans l'environnement local
+# Ne jamais committer les clés en dur ici — utiliser un .env ou les variables d'env du système
 mailjet:
-  api-key: ${MAILJET_API_KEY:0c08206ad86dd191024fce953206f899}
-  secret-key: ${MAILJET_SECRET_KEY:794dad8392839d233fd5371fc9f2fbf6}
+  api-key: ${MAILJET_API_KEY}
+  secret-key: ${MAILJET_SECRET_KEY}
