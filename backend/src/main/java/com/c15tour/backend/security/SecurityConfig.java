@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/register", "/error").permitAll()
+                        .requestMatchers("/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password", "/error").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/tours/share/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/tours/*/route-to-start").permitAll()

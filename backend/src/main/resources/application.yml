@@ -16,8 +16,13 @@ audio:
 # ── Security ──
 app:
   security:
-    admin-username: ${ADMIN_USERNAME:admin}
-    admin-password: ${ADMIN_PASSWORD:admin}
     jwt-secret: ${JWT_SECRET:changeMeInProductionThisKeyMustBeAtLeast256BitsLong!!}
     jwt-expiration-ms: 86400000  # 24 heures
+  frontend:
+    url: ${FRONTEND_URL:http://localhost}
 
+# ── Mailjet ──
+mailjet:
+  api-key: ${MAILJET_API_KEY:}
+  secret-key: ${MAILJET_SECRET_KEY:}
+  from-email: noreply@c15tour.com
