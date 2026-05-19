@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.0](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.6...v0.1.0) (2026-05-19)
+
+
+### Features
+
+* publish Docker image to GHCR on release ([b9b0a96](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/b9b0a96d1b472ed3c47000adbcc46b98a3150c22))
+* publish Docker image to GHCR on release ([be10ca5](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/be10ca5bfee34decfcbfdc0c0ab76d267b38e2d9))
+
+
+### Bug Fixes
+
+* skip release-please on snapshot merges to prevent stale PRs ([40752b5](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/40752b558f76a997972617f7ea18a203d296c5b8))
+
 ## [0.0.6](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.5...v0.0.6) (2026-05-19)
 
 
