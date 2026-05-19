@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.5](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.4...v0.0.5) (2026-05-18)
+
+
+### Bug Fixes
+
+* create PR instead of direct push to protected dev branch ([0cfde63](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/0cfde6321c1bd835be34b086fdf585f905a61072))
+
+
 ## [0.0.4](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.3...v0.0.4) (2026-05-18)
 
 
