@@ -20,6 +20,8 @@ import java.util.UUID;
 @RequestMapping("/auth")
 public class AuthController {
 
+    private static final String MESSAGE_KEY = "message";
+
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -91,7 +93,7 @@ public class AuthController {
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
 
-        return ResponseEntity.ok(Map.of("message", "Password updated successfully"));
+        return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Password updated successfully"));
     }
 
     @PostMapping("/forgot-password")
@@ -109,7 +111,7 @@ public class AuthController {
             mailjetEmailService.sendPasswordResetEmail(user.getEmail(), resetUrl);
         }
 
-        return ResponseEntity.ok(Map.of("message", "If that email exists, a reset link has been sent"));
+        return ResponseEntity.ok(Map.of(MESSAGE_KEY, "If that email exists, a reset link has been sent"));
     }
 
     @PostMapping("/reset-password")
@@ -132,7 +134,7 @@ public class AuthController {
         user.setResetTokenExpiry(null);
         userRepository.save(user);
 
-        return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
+        return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Password reset successfully"));
     }
 
     public record LoginRequest(String email, String password) {}
