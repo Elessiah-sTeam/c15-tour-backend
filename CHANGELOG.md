@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.6](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.5...v0.0.6) (2026-05-19)
+
+
+### Bug Fixes
+
+* restore auto-sync on release-please merges, only skip CI ([3716a90](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/3716a9098fa63f8fc55fed8314fe119588a7cc22))
+* skip CI and sync on release-please bot merges ([5ecd09b](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/5ecd09ba4a7833be6adf179163b9d9a749ecad3b))
+* skip CI and sync on release-please bot merges ([e79dd91](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/e79dd91bcb4b8984bf17a64a061257098a09e700))
+* test ([0dd280e](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/0dd280e06efd3e384af5bb76554f6a6bdbf99a60))
+* test ([f638a74](https://github.com/Elessiah-sTeam/c15-tour-backend/commit/f638a74cef4a46eb3bf70c3059b97146affc5f2b))
+
 ## [0.0.5](https://github.com/Elessiah-sTeam/c15-tour-backend/compare/v0.0.4...v0.0.5) (2026-05-18)
 
 
