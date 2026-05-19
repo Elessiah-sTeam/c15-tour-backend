@@ -10,3 +10,8 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: true
+
+# -- Mailjet (dev defaults - use env vars in prod)
+mailjet:
+  api-key: ${MAILJET_API_KEY:0c08206ad86dd191024fce953206f899}
+  secret-key: ${MAILJET_SECRET_KEY:794dad8392839d233fd5371fc9f2fbf6}
