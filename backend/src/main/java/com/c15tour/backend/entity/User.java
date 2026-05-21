@@ -26,6 +26,10 @@ public class User {
     @Column(name = "password_changed_at")
     private Long passwordChangedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
+
     public Long getId() { return id; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
@@ -37,4 +41,6 @@ public class User {
     public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) { this.resetTokenExpiry = resetTokenExpiry; }
     public Long getPasswordChangedAt() { return passwordChangedAt; }
     public void setPasswordChangedAt(Long passwordChangedAt) { this.passwordChangedAt = passwordChangedAt; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 }

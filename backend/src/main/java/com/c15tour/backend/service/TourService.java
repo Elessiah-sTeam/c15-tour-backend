@@ -2,9 +2,11 @@ package com.c15tour.backend.service;
 
 import com.c15tour.backend.entity.Segment;
 import com.c15tour.backend.entity.Tour;
+import com.c15tour.backend.entity.User;
 import com.c15tour.backend.entity.Waypoint;
 import com.c15tour.backend.mapper.TourMapper;
 import com.c15tour.backend.repository.TourRepository;
+import com.c15tour.backend.repository.UserRepository;
 import com.c15tour.backend.service.osrm.OSRMResponse;
 import com.c15tour.model.Coordinates;
 import com.c15tour.model.PatchDepartureTimeRequest;
@@ -32,53 +34,72 @@ public class TourService {
     private static final Logger log = LoggerFactory.getLogger(TourService.class);
 
     private final TourRepository tourRepository;
+    private final UserRepository userRepository;
     private final TourMapper tourMapper;
     private final RoutingService routingService;
     private final ShareCodeService shareCodeService;
     private final ObjectMapper objectMapper;
 
-    public TourService(TourRepository tourRepository, TourMapper tourMapper,
-                       RoutingService routingService, ShareCodeService shareCodeService,
-                       ObjectMapper objectMapper) {
+    public TourService(TourRepository tourRepository, UserRepository userRepository,
+                       TourMapper tourMapper, RoutingService routingService,
+                       ShareCodeService shareCodeService, ObjectMapper objectMapper) {
         this.tourRepository = tourRepository;
+        this.userRepository = userRepository;
         this.tourMapper = tourMapper;
         this.routingService = routingService;
         this.shareCodeService = shareCodeService;
         this.objectMapper = objectMapper;
     }
 
-    public TourResponse create(TourCreateRequest request) {
+    public TourResponse create(TourCreateRequest request, String currentUserEmail) {
         Tour tour = tourMapper.toEntity(request);
         calculateTourRoutes(tour);
         tour.setShareCode(shareCodeService.generateUniqueShareCode());
         tour.setOrganiserCode(shareCodeService.generateUniqueOrganiserCode());
+        userRepository.findByEmail(currentUserEmail).ifPresent(tour::setOwner);
         return tourMapper.toResponse(tourRepository.save(tour));
     }
 
-    public Optional<TourResponse> update(Long id, TourCreateRequest request) {
-        return tourRepository.findById(id).map(existing -> {
+    public Optional<TourResponse> update(Long id, TourCreateRequest request, String currentUserEmail, boolean isAdmin) {
+        Optional<Tour> found = isAdmin
+                ? tourRepository.findById(id)
+                : resolveOwner(currentUserEmail).flatMap(owner -> tourRepository.findByIdAndOwner(id, owner));
+        return found.map(existing -> {
             tourMapper.updateEntity(existing, request);
             calculateTourRoutes(existing);
             return tourMapper.toResponse(tourRepository.save(existing));
         });
     }
 
-    public Optional<TourResponse> patchDepartureTime(Long id, PatchDepartureTimeRequest request) {
-        return tourRepository.findById(id).map(tour -> {
+    public Optional<TourResponse> patchDepartureTime(Long id, PatchDepartureTimeRequest request, String currentUserEmail, boolean isAdmin) {
+        Optional<Tour> found = isAdmin
+                ? tourRepository.findById(id)
+                : resolveOwner(currentUserEmail).flatMap(owner -> tourRepository.findByIdAndOwner(id, owner));
+        return found.map(tour -> {
             tour.setDepartureTime(request.getDepartureTime().toLocalDateTime());
             recalculateEtas(tour);
             return tourMapper.toResponse(tourRepository.save(tour));
         });
     }
 
-    public boolean delete(Long id) {
-        if (!tourRepository.existsById(id)) return false;
+    public boolean delete(Long id, String currentUserEmail, boolean isAdmin) {
+        if (isAdmin) {
+            if (!tourRepository.existsById(id)) return false;
+        } else {
+            User owner = resolveOwner(currentUserEmail).orElse(null);
+            if (owner == null || !tourRepository.existsByIdAndOwner(id, owner)) return false;
+        }
         tourRepository.deleteById(id);
         return true;
     }
 
-    public TourPageResponse getAll(int page, int size) {
-        Page<Tour> tourPage = tourRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+    public TourPageResponse getAll(int page, int size, String currentUserEmail, boolean isAdmin) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Tour> tourPage = isAdmin
+                ? tourRepository.findAll(pageRequest)
+                : resolveOwner(currentUserEmail)
+                        .map(owner -> tourRepository.findByOwner(owner, pageRequest))
+                        .orElse(Page.empty(pageRequest));
         TourPageResponse response = new TourPageResponse();
         response.setContent(tourPage.getContent().stream().map(tourMapper::toResponse).collect(Collectors.toList()));
         response.setTotalElements(tourPage.getTotalElements());
@@ -87,8 +108,17 @@ public class TourService {
         return response;
     }
 
-    public Optional<TourResponse> getById(Long id) {
-        return tourRepository.findById(id).map(tourMapper::toResponse);
+    public Optional<TourResponse> getById(Long id, String currentUserEmail, boolean isAdmin) {
+        if (isAdmin) {
+            return tourRepository.findById(id).map(tourMapper::toResponse);
+        }
+        return resolveOwner(currentUserEmail)
+                .flatMap(owner -> tourRepository.findByIdAndOwner(id, owner))
+                .map(tourMapper::toResponse);
+    }
+
+    private Optional<User> resolveOwner(String email) {
+        return userRepository.findByEmail(email);
     }
 
     public Optional<TourResponse> getByShareCode(String code) {
