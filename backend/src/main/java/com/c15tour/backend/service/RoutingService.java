@@ -77,15 +77,14 @@ public class RoutingService {
 
         String destinationIndices = IntStream.rangeClosed(1, destinations.size())
                 .mapToObj(Integer::toString)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining(";"));
+
+        // Build raw URI to prevent Spring from percent-encoding the semicolons in query params
+        String rawUri = "/table/v1/driving/" + coords + "?sources=0&destinations=" + destinationIndices;
 
         try {
             OSRMTableResponse response = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/table/v1/driving/{coords}")
-                            .queryParam("sources", "0")
-                            .queryParam("destinations", destinationIndices)
-                            .build(coords))
+                    .uri(rawUri)
                     .retrieve()
                     .body(OSRMTableResponse.class);
 
