@@ -44,7 +44,8 @@ public class SecurityConfig {
                                 "/tours/share/*/join",
                                 "/tours/share/*/organiser-position",
                                 "/tours/share/*/organiser-position/stream",
-                                "/tours/share/*/audio-messages"
+                                "/tours/share/*/audio-messages",
+                                "/tours/share/*/redirect"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/audio/*").permitAll()
