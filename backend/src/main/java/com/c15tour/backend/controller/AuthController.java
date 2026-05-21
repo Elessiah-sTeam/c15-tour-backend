@@ -1,5 +1,6 @@
 package com.c15tour.backend.controller;
 
+import com.c15tour.backend.entity.Role;
 import com.c15tour.backend.entity.User;
 import com.c15tour.backend.repository.UserRepository;
 import com.c15tour.backend.security.JwtUtils;
@@ -28,7 +29,6 @@ import java.util.UUID;
 public class AuthController {
 
     private static final String MESSAGE_KEY = "message";
-    private static final String ROLE_ADMIN = "ADMIN";
     private static final int MIN_PASSWORD_LENGTH = 8;
 
     private final JwtUtils jwtUtils;
@@ -54,7 +54,7 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         Optional<User> dbUser = userRepository.findByEmail(request.email());
         if (dbUser.isPresent() && passwordEncoder.matches(request.password(), dbUser.get().getPasswordHash())) {
-            String token = jwtUtils.generateToken(dbUser.get().getEmail(), ROLE_ADMIN);
+            String token = jwtUtils.generateToken(dbUser.get().getEmail(), dbUser.get().getRole().name());
             return ResponseEntity.ok(Map.of("token", token));
         }
 
@@ -74,7 +74,7 @@ public class AuthController {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);
 
-        String token = jwtUtils.generateToken(user.getEmail(), ROLE_ADMIN);
+        String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("token", token));
     }
 
@@ -98,7 +98,7 @@ public class AuthController {
         user.setPasswordChangedAt(Instant.now().getEpochSecond());
         userRepository.save(user);
 
-        String newToken = jwtUtils.generateToken(user.getEmail(), ROLE_ADMIN);
+        String newToken = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
         return ResponseEntity.ok(Map.of(
                 MESSAGE_KEY, "Password updated successfully",
                 "token", newToken));
