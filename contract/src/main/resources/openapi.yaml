@@ -386,7 +386,7 @@ paths:
         - name: code
           in: path
           required: true
-          description: "Share code of the tour"
+          description: "Share code or organiser code of the tour"
           schema:
             type: string
       requestBody:
