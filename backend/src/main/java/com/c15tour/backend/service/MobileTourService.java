@@ -5,7 +5,6 @@ import com.c15tour.backend.entity.Tour;
 import com.c15tour.backend.entity.Waypoint;
 import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.backend.service.osrm.OSRMResponse;
-import com.c15tour.backend.service.osrm.OSRMTableResponse;
 import com.c15tour.model.Coordinates;
 import com.c15tour.model.JoinResponse;
 import com.c15tour.model.OrganiserPositionRequest;
@@ -28,8 +27,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class MobileTourService {
-
-    private static final int REDIRECT_CANDIDATE_COUNT = 5;
 
     private final TourRepository tourRepository;
     private final RoutingService routingService;
@@ -155,12 +152,11 @@ public class MobileTourService {
                 .toList();
 
         int skipCount = (lastReachedWaypointIndex != null) ? lastReachedWaypointIndex + 1 : 0;
-        List<Waypoint> candidates = allWaypoints.stream()
+        List<Waypoint> remaining = allWaypoints.stream()
                 .skip(skipCount)
-                .limit(REDIRECT_CANDIDATE_COUNT)
                 .toList();
 
-        if (candidates.isEmpty()) {
+        if (remaining.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No remaining waypoints");
         }
 
@@ -168,39 +164,16 @@ public class MobileTourService {
         origin.setLatitude(lat);
         origin.setLongitude(lng);
 
-        List<Coordinates> destinations = candidates.stream().map(w -> {
+        List<Coordinates> coordinates = new ArrayList<>();
+        coordinates.add(origin);
+        for (Waypoint w : remaining) {
             Coordinates c = new Coordinates();
             c.setLatitude(w.getLatitude());
             c.setLongitude(w.getLongitude());
-            return c;
-        }).toList();
-
-        Waypoint target;
-        if (candidates.size() == 1) {
-            target = candidates.getFirst();
-        } else {
-            OSRMTableResponse table = routingService.calculateTable(origin, destinations);
-            if (table == null || table.durations() == null || table.durations().isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not compute durations");
-            }
-            List<Double> durations = table.durations().getFirst();
-            int bestIndex = 0;
-            Double bestDuration = null;
-            for (int i = 0; i < durations.size(); i++) {
-                Double d = durations.get(i);
-                if (d != null && (bestDuration == null || d < bestDuration)) {
-                    bestDuration = d;
-                    bestIndex = i;
-                }
-            }
-            target = candidates.get(bestIndex);
+            coordinates.add(c);
         }
 
-        Coordinates targetCoords = new Coordinates();
-        targetCoords.setLatitude(target.getLatitude());
-        targetCoords.setLongitude(target.getLongitude());
-
-        OSRMResponse osrmResponse = routingService.calculateRoute(List.of(origin, targetCoords), true);
+        OSRMResponse osrmResponse = routingService.calculateRoute(coordinates, true);
         if (osrmResponse == null || osrmResponse.routes() == null || osrmResponse.routes().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not compute route");
         }
@@ -223,10 +196,15 @@ public class MobileTourService {
             e.printStackTrace();
         }
 
-        com.c15tour.model.Waypoints targetDto = new com.c15tour.model.Waypoints();
-        targetDto.setName(target.getName() != null ? target.getName() : "Waypoint");
-        targetDto.setCoordinates(targetCoords);
-        response.setStartPoint(targetDto);
+        Waypoint nextWaypoint = remaining.getFirst();
+        Coordinates nextCoords = new Coordinates();
+        nextCoords.setLatitude(nextWaypoint.getLatitude());
+        nextCoords.setLongitude(nextWaypoint.getLongitude());
+
+        com.c15tour.model.Waypoints startDto = new com.c15tour.model.Waypoints();
+        startDto.setName(nextWaypoint.getName() != null ? nextWaypoint.getName() : "Waypoint");
+        startDto.setCoordinates(nextCoords);
+        response.setStartPoint(startDto);
 
         return response;
     }
