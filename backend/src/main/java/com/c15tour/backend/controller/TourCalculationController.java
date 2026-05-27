@@ -51,7 +51,7 @@ public class TourCalculationController implements TourCalculationApi {
 
         Waypoints startPointDto = waypointMapper.toDto(startWaypoint);
         Coordinates startCoords = startPointDto.getCoordinates();
-        OSRMResponse osrmResponse = routingService.calculateRoute(List.of(userCoords, startCoords));
+        OSRMResponse osrmResponse = routingService.calculateRoute(List.of(userCoords, startCoords), true);
 
         if (osrmResponse == null || osrmResponse.routes().isEmpty() || osrmResponse.routes() == null) {
             return ResponseEntity.badRequest().build();
