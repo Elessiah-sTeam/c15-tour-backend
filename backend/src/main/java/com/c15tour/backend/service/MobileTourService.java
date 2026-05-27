@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Service
 public class MobileTourService {
 
-    private static final int REDIRECT_CANDIDATE_COUNT = 5;
+    private static final int REDIRECT_CANDIDATE_COUNT = 3;
 
     private final TourRepository tourRepository;
     private final RoutingService routingService;
