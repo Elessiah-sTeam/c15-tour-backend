@@ -155,12 +155,11 @@ public class MobileTourService {
                 .toList();
 
         int skipCount = (lastReachedWaypointIndex != null) ? lastReachedWaypointIndex + 1 : 0;
-        List<Waypoint> candidates = allWaypoints.stream()
+        List<Waypoint> remaining = allWaypoints.stream()
                 .skip(skipCount)
-                .limit(REDIRECT_CANDIDATE_COUNT)
                 .toList();
 
-        if (candidates.isEmpty()) {
+        if (remaining.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No remaining waypoints");
         }
 
@@ -168,18 +167,22 @@ public class MobileTourService {
         origin.setLatitude(lat);
         origin.setLongitude(lng);
 
-        List<Coordinates> destinations = candidates.stream().map(w -> {
-            Coordinates c = new Coordinates();
-            c.setLatitude(w.getLatitude());
-            c.setLongitude(w.getLongitude());
-            return c;
-        }).toList();
+        List<Waypoint> candidates = remaining.stream()
+                .limit(REDIRECT_CANDIDATE_COUNT)
+                .toList();
 
-        Waypoint target;
+        int rejoinIndex;
         if (candidates.size() == 1) {
-            target = candidates.getFirst();
+            rejoinIndex = 0;
         } else {
-            OSRMTableResponse table = routingService.calculateTable(origin, destinations);
+            List<Coordinates> candidateCoords = candidates.stream().map(w -> {
+                Coordinates c = new Coordinates();
+                c.setLatitude(w.getLatitude());
+                c.setLongitude(w.getLongitude());
+                return c;
+            }).toList();
+
+            OSRMTableResponse table = routingService.calculateTable(origin, candidateCoords);
             if (table == null || table.durations() == null || table.durations().isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not compute durations");
             }
@@ -193,14 +196,21 @@ public class MobileTourService {
                     bestIndex = i;
                 }
             }
-            target = candidates.get(bestIndex);
+            rejoinIndex = bestIndex;
         }
 
-        Coordinates targetCoords = new Coordinates();
-        targetCoords.setLatitude(target.getLatitude());
-        targetCoords.setLongitude(target.getLongitude());
+        List<Waypoint> routeWaypoints = remaining.subList(rejoinIndex, remaining.size());
 
-        OSRMResponse osrmResponse = routingService.calculateRoute(List.of(origin, targetCoords), true);
+        List<Coordinates> coordinates = new ArrayList<>();
+        coordinates.add(origin);
+        for (Waypoint w : routeWaypoints) {
+            Coordinates c = new Coordinates();
+            c.setLatitude(w.getLatitude());
+            c.setLongitude(w.getLongitude());
+            coordinates.add(c);
+        }
+
+        OSRMResponse osrmResponse = routingService.calculateRoute(coordinates, true);
         if (osrmResponse == null || osrmResponse.routes() == null || osrmResponse.routes().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not compute route");
         }
@@ -223,10 +233,15 @@ public class MobileTourService {
             e.printStackTrace();
         }
 
-        com.c15tour.model.Waypoints targetDto = new com.c15tour.model.Waypoints();
-        targetDto.setName(target.getName() != null ? target.getName() : "Waypoint");
-        targetDto.setCoordinates(targetCoords);
-        response.setStartPoint(targetDto);
+        Waypoint rejoinWaypoint = routeWaypoints.getFirst();
+        Coordinates rejoinCoords = new Coordinates();
+        rejoinCoords.setLatitude(rejoinWaypoint.getLatitude());
+        rejoinCoords.setLongitude(rejoinWaypoint.getLongitude());
+
+        com.c15tour.model.Waypoints startDto = new com.c15tour.model.Waypoints();
+        startDto.setName(rejoinWaypoint.getName() != null ? rejoinWaypoint.getName() : "Waypoint");
+        startDto.setCoordinates(rejoinCoords);
+        response.setStartPoint(startDto);
 
         return response;
     }
