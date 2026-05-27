@@ -143,8 +143,9 @@ public class MobileTourService {
         }
     }
 
-    public RouteToStartResponse redirect(String shareCode, double lat, double lng, Integer lastReachedWaypointIndex) {
-        Tour tour = tourRepository.findByShareCode(shareCode)
+    public RouteToStartResponse redirect(String code, double lat, double lng, Integer lastReachedWaypointIndex) {
+        Tour tour = tourRepository.findByShareCode(code)
+                .or(() -> tourRepository.findByOrganiserCode(code))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tour not found"));
 
         List<Waypoint> allWaypoints = tour.getSegments().stream()
