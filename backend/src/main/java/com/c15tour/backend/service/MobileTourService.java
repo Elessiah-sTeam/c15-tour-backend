@@ -5,6 +5,7 @@ import com.c15tour.backend.entity.Tour;
 import com.c15tour.backend.entity.Waypoint;
 import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.backend.service.osrm.OSRMResponse;
+import com.c15tour.backend.service.osrm.OSRMTableResponse;
 import com.c15tour.model.Coordinates;
 import com.c15tour.model.JoinResponse;
 import com.c15tour.model.OrganiserPositionRequest;
@@ -27,6 +28,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class MobileTourService {
+
+    private static final int REDIRECT_CANDIDATE_COUNT = 5;
 
     private final TourRepository tourRepository;
     private final RoutingService routingService;
@@ -164,9 +167,43 @@ public class MobileTourService {
         origin.setLatitude(lat);
         origin.setLongitude(lng);
 
+        List<Waypoint> candidates = remaining.stream()
+                .limit(REDIRECT_CANDIDATE_COUNT)
+                .toList();
+
+        int rejoinIndex;
+        if (candidates.size() == 1) {
+            rejoinIndex = 0;
+        } else {
+            List<Coordinates> candidateCoords = candidates.stream().map(w -> {
+                Coordinates c = new Coordinates();
+                c.setLatitude(w.getLatitude());
+                c.setLongitude(w.getLongitude());
+                return c;
+            }).toList();
+
+            OSRMTableResponse table = routingService.calculateTable(origin, candidateCoords);
+            if (table == null || table.durations() == null || table.durations().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not compute durations");
+            }
+            List<Double> durations = table.durations().getFirst();
+            int bestIndex = 0;
+            Double bestDuration = null;
+            for (int i = 0; i < durations.size(); i++) {
+                Double d = durations.get(i);
+                if (d != null && (bestDuration == null || d < bestDuration)) {
+                    bestDuration = d;
+                    bestIndex = i;
+                }
+            }
+            rejoinIndex = bestIndex;
+        }
+
+        List<Waypoint> routeWaypoints = remaining.subList(rejoinIndex, remaining.size());
+
         List<Coordinates> coordinates = new ArrayList<>();
         coordinates.add(origin);
-        for (Waypoint w : remaining) {
+        for (Waypoint w : routeWaypoints) {
             Coordinates c = new Coordinates();
             c.setLatitude(w.getLatitude());
             c.setLongitude(w.getLongitude());
@@ -196,14 +233,14 @@ public class MobileTourService {
             e.printStackTrace();
         }
 
-        Waypoint nextWaypoint = remaining.getFirst();
-        Coordinates nextCoords = new Coordinates();
-        nextCoords.setLatitude(nextWaypoint.getLatitude());
-        nextCoords.setLongitude(nextWaypoint.getLongitude());
+        Waypoint rejoinWaypoint = routeWaypoints.getFirst();
+        Coordinates rejoinCoords = new Coordinates();
+        rejoinCoords.setLatitude(rejoinWaypoint.getLatitude());
+        rejoinCoords.setLongitude(rejoinWaypoint.getLongitude());
 
         com.c15tour.model.Waypoints startDto = new com.c15tour.model.Waypoints();
-        startDto.setName(nextWaypoint.getName() != null ? nextWaypoint.getName() : "Waypoint");
-        startDto.setCoordinates(nextCoords);
+        startDto.setName(rejoinWaypoint.getName() != null ? rejoinWaypoint.getName() : "Waypoint");
+        startDto.setCoordinates(rejoinCoords);
         response.setStartPoint(startDto);
 
         return response;
