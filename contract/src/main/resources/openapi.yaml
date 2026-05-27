@@ -401,7 +401,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RouteToStartResponse'
+                $ref: '#/components/schemas/RedirectTourResponse'
         '400':
           description: No remaining waypoints or OSRM error
           content:
@@ -753,6 +753,17 @@ components:
           type: integer
           minimum: 0
           description: Flat index of the last confirmed waypoint across all segments (0-based). Omit to consider all waypoints.
+
+    RedirectTourResponse:
+      type: object
+      required:
+        - tour
+        - route
+      properties:
+        tour:
+          $ref: '#/components/schemas/TourResponse'
+        route:
+          $ref: '#/components/schemas/RouteToStartResponse'
 
     RouteToStartResponse:
       type: object

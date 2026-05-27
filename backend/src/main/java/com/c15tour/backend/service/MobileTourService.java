@@ -3,13 +3,16 @@ package com.c15tour.backend.service;
 import com.c15tour.backend.entity.Segment;
 import com.c15tour.backend.entity.Tour;
 import com.c15tour.backend.entity.Waypoint;
+import com.c15tour.backend.mapper.TourMapper;
 import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.backend.service.osrm.OSRMResponse;
 import com.c15tour.backend.service.osrm.OSRMTableResponse;
 import com.c15tour.model.Coordinates;
 import com.c15tour.model.JoinResponse;
 import com.c15tour.model.OrganiserPositionRequest;
+import com.c15tour.model.RedirectTourResponse;
 import com.c15tour.model.RouteToStartResponse;
+import com.c15tour.model.TourResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,14 +36,17 @@ public class MobileTourService {
 
     private final TourRepository tourRepository;
     private final RoutingService routingService;
+    private final TourMapper tourMapper;
     private final ObjectMapper objectMapper;
     private final Map<Long, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
     public MobileTourService(TourRepository tourRepository,
                              RoutingService routingService,
+                             TourMapper tourMapper,
                              ObjectMapper objectMapper) {
         this.tourRepository = tourRepository;
         this.routingService = routingService;
+        this.tourMapper = tourMapper;
         this.objectMapper = objectMapper;
     }
 
@@ -143,7 +149,7 @@ public class MobileTourService {
         }
     }
 
-    public RouteToStartResponse redirect(String code, double lat, double lng, Integer lastReachedWaypointIndex) {
+    public RedirectTourResponse redirect(String code, double lat, double lng, Integer lastReachedWaypointIndex) {
         Tour tour = tourRepository.findByShareCode(code)
                 .or(() -> tourRepository.findByOrganiserCode(code))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tour not found"));
@@ -216,18 +222,18 @@ public class MobileTourService {
         }
 
         var route = osrmResponse.routes().getFirst();
-        RouteToStartResponse response = new RouteToStartResponse();
-        response.setDistance(route.distance() != null ? (long) Math.round(route.distance()) : 0L);
-        response.setDuration(route.duration() != null ? (long) Math.round(route.duration()) : 0L);
+        RouteToStartResponse routeResponse = new RouteToStartResponse();
+        routeResponse.setDistance(route.distance() != null ? (long) Math.round(route.distance()) : 0L);
+        routeResponse.setDuration(route.duration() != null ? (long) Math.round(route.duration()) : 0L);
 
         try {
-            response.setGeometry(objectMapper.writeValueAsString(route.geometry()));
+            routeResponse.setGeometry(objectMapper.writeValueAsString(route.geometry()));
             if (route.legs() != null) {
                 List<OSRMResponse.Step> allSteps = route.legs().stream()
                         .filter(leg -> leg.steps() != null)
                         .flatMap(leg -> leg.steps().stream())
                         .toList();
-                response.setSteps(objectMapper.writeValueAsString(allSteps));
+                routeResponse.setSteps(objectMapper.writeValueAsString(allSteps));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -241,8 +247,15 @@ public class MobileTourService {
         com.c15tour.model.Waypoints startDto = new com.c15tour.model.Waypoints();
         startDto.setName(rejoinWaypoint.getName() != null ? rejoinWaypoint.getName() : "Waypoint");
         startDto.setCoordinates(rejoinCoords);
-        response.setStartPoint(startDto);
+        routeResponse.setStartPoint(startDto);
 
+        TourResponse tourResponse = tourMapper.toResponse(tour);
+        tourResponse.setOrganiserCode(null);
+        tourResponse.setRole(TourResponse.RoleEnum.ORGANISER);
+
+        RedirectTourResponse response = new RedirectTourResponse();
+        response.setTour(tourResponse);
+        response.setRoute(routeResponse);
         return response;
     }
 }
