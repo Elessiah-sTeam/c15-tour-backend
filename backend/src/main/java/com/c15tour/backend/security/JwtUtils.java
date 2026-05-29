@@ -41,6 +41,10 @@ public class JwtUtils {
         return parseClaims(token).get("role", String.class);
     }
 
+    public long getIssuedAtEpochSecond(String token) {
+        return parseClaims(token).getIssuedAt().toInstant().getEpochSecond();
+    }
+
     public boolean isValid(String token) {
         try {
             parseClaims(token);

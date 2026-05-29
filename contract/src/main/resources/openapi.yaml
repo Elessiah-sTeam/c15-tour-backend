@@ -376,6 +376,45 @@ paths:
         '404':
           description: File not found
 
+  /tours/share/{code}/redirect:
+    post:
+      summary: Get best reroute from current position back to the tour
+      operationId: redirectToTour
+      tags:
+        - Mobile
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: "Share code or organiser code of the tour"
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedirectRequest'
+      responses:
+        '200':
+          description: Best reroute calculated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedirectTourResponse'
+        '400':
+          description: No remaining waypoints or OSRM error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Tour not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /tours/{id}/route-to-start:
     post:
       summary: Get route from current location to the start of the tour
@@ -693,6 +732,38 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    RedirectRequest:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        lastReachedWaypointIndex:
+          type: integer
+          minimum: 0
+          description: Flat index of the last confirmed waypoint across all segments (0-based). Omit to consider all waypoints.
+
+    RedirectTourResponse:
+      type: object
+      required:
+        - tour
+        - route
+      properties:
+        tour:
+          $ref: '#/components/schemas/TourResponse'
+        route:
+          $ref: '#/components/schemas/RouteToStartResponse'
 
     RouteToStartResponse:
       type: object

@@ -1,5 +1,6 @@
 package com.c15tour.backend.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,6 +23,9 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Value("${allowed.origins:http://localhost}")
+    private String allowedOrigins;
+
     private final JwtAuthenticationFilter jwtAuthFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
@@ -35,7 +39,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/register", "/error").permitAll()
+                        .requestMatchers("/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password", "/error").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/tours/share/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/tours/*/route-to-start").permitAll()
@@ -44,7 +48,8 @@ public class SecurityConfig {
                                 "/tours/share/*/join",
                                 "/tours/share/*/organiser-position",
                                 "/tours/share/*/organiser-position/stream",
-                                "/tours/share/*/audio-messages"
+                                "/tours/share/*/audio-messages",
+                                "/tours/share/*/redirect"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/audio/*").permitAll()
@@ -58,7 +63,7 @@ public class SecurityConfig {
                                 "/webjars/**"
                         ).permitAll()
 
-                        .anyRequest().hasRole("ADMIN")
+                        .anyRequest().hasAnyRole("USER", "ADMIN")
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -73,8 +78,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost", "http://localhost:3000", "http://localhost:8081"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 
