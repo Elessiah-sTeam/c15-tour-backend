@@ -14,6 +14,8 @@ import com.c15tour.model.UserPositionRequest;
 import com.c15tour.model.Waypoints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +24,8 @@ import java.util.List;
 
 @RestController
 public class TourCalculationController implements TourCalculationApi {
+
+    private static final Logger logger = LoggerFactory.getLogger(TourCalculationController.class);
 
     private final TourRepository tourRepository;
     private final RoutingService routingService;
@@ -74,7 +78,7 @@ public class TourCalculationController implements TourCalculationApi {
                 response.setSteps(objectMapper.writeValueAsString(allSteps));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to serialize OSRM response", e);
         }
 
         response.setStartPoint(startPointDto);

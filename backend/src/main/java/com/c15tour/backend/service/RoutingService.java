@@ -3,6 +3,8 @@ package com.c15tour.backend.service;
 import com.c15tour.backend.service.osrm.OSRMResponse;
 import com.c15tour.backend.service.osrm.OSRMTableResponse;
 import com.c15tour.model.Coordinates;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -13,6 +15,8 @@ import java.util.stream.IntStream;
 
 @Service
 public class RoutingService {
+    private static final Logger logger = LoggerFactory.getLogger(RoutingService.class);
+
     private RestClient restClient;
 
     @Autowired
@@ -44,14 +48,10 @@ public class RoutingService {
             return null;
 
         } catch (org.springframework.web.client.RestClientResponseException e) {
-            System.err.println("ERREUR HTTP OSRM : " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
-            e.printStackTrace();
-            // 4xx/5xx: tu peux logguer e.getStatusCode() et e.getResponseBodyAsString()
+            logger.error("OSRM HTTP error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
             return null;
         } catch (org.springframework.web.client.RestClientException e) {
-            System.err.println("ERREUR CLIENT OSRM (Réseau ou Parsing) : " + e.getMessage());
-            e.printStackTrace();
-            // réseau / timeout / etc.
+            logger.error("OSRM client error (network/parsing): {}", e.getMessage(), e);
             return null;
         }
     }
@@ -92,10 +92,10 @@ public class RoutingService {
             return null;
 
         } catch (org.springframework.web.client.RestClientResponseException e) {
-            System.err.println("ERREUR HTTP OSRM Table : " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+            logger.error("OSRM Table HTTP error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
             return null;
         } catch (org.springframework.web.client.RestClientException e) {
-            System.err.println("ERREUR CLIENT OSRM Table : " + e.getMessage());
+            logger.error("OSRM Table client error: {}", e.getMessage(), e);
             return null;
         }
     }

@@ -14,6 +14,8 @@ import com.c15tour.model.RedirectTourResponse;
 import com.c15tour.model.RouteToStartResponse;
 import com.c15tour.model.TourResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,6 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Service
 public class MobileTourService {
 
+    private static final Logger logger = LoggerFactory.getLogger(MobileTourService.class);
     private static final int REDIRECT_CANDIDATE_COUNT = 3;
 
     private final TourRepository tourRepository;
@@ -236,7 +239,7 @@ public class MobileTourService {
                 routeResponse.setSteps(objectMapper.writeValueAsString(allSteps));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to serialize OSRM redirect response", e);
         }
 
         Waypoint rejoinWaypoint = routeWaypoints.getFirst();
