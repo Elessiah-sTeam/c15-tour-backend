@@ -2,10 +2,12 @@ package com.c15tour.backend.controller;
 
 import com.c15tour.backend.entity.Role;
 import com.c15tour.backend.entity.User;
+import com.c15tour.backend.repository.TourRepository;
 import com.c15tour.backend.repository.UserRepository;
 import com.c15tour.backend.security.JwtUtils;
 import com.c15tour.backend.security.TokenHasher;
 import com.c15tour.backend.service.MailjetEmailService;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -33,6 +35,7 @@ public class AuthController {
 
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
+    private final TourRepository tourRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailjetEmailService mailjetEmailService;
     private final String frontendUrl;
@@ -40,11 +43,13 @@ public class AuthController {
     public AuthController(
             JwtUtils jwtUtils,
             UserRepository userRepository,
+            TourRepository tourRepository,
             PasswordEncoder passwordEncoder,
             MailjetEmailService mailjetEmailService,
             @Value("${app.frontend.url}") String frontendUrl) {
         this.jwtUtils = jwtUtils;
         this.userRepository = userRepository;
+        this.tourRepository = tourRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailjetEmailService = mailjetEmailService;
         this.frontendUrl = frontendUrl;
@@ -104,6 +109,29 @@ public class AuthController {
                 "token", newToken));
     }
 
+    @DeleteMapping("/account")
+    @Transactional
+    public ResponseEntity<?> deleteAccount(@Valid @RequestBody DeleteAccountRequest request, Authentication authentication) {
+        String email = authentication.getName();
+        Optional<User> dbUser = userRepository.findByEmail(email);
+
+        if (dbUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found"));
+        }
+
+        User user = dbUser.get();
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Password is incorrect"));
+        }
+
+        tourRepository.deleteAll(tourRepository.findByOwner(user));
+        userRepository.delete(user);
+
+        return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Account deleted successfully"));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         Optional<User> dbUser = userRepository.findByEmail(request.email());
@@ -160,6 +188,9 @@ public class AuthController {
     public record ChangePasswordRequest(
             @NotBlank String currentPassword,
             @NotBlank @Size(min = MIN_PASSWORD_LENGTH) String newPassword) {}
+
+    public record DeleteAccountRequest(
+            @NotBlank String password) {}
 
     public record ForgotPasswordRequest(
             @NotBlank @Email String email) {}

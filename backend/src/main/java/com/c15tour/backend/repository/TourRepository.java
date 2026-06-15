@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,6 +17,7 @@ public interface TourRepository extends JpaRepository<Tour, Long> {
     Optional<Tour> findByOrganiserSessionToken(String organiserSessionToken);
     boolean existsByShareCode(String shareCode);
     Page<Tour> findByOwner(User owner, Pageable pageable);
+    List<Tour> findByOwner(User owner);
     Optional<Tour> findByIdAndOwner(Long id, User owner);
     boolean existsByIdAndOwner(Long id, User owner);
 }

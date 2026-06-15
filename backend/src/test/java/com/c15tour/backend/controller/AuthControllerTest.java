@@ -51,6 +51,9 @@ class AuthControllerTest {
     private UserRepository userRepository;
 
     @MockitoBean
+    private com.c15tour.backend.repository.TourRepository tourRepository;
+
+    @MockitoBean
     private com.c15tour.backend.service.RoutingService routingService;
 
     @Autowired
