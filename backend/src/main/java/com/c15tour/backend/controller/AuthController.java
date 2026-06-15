@@ -109,6 +109,16 @@ public class AuthController {
                 "token", newToken));
     }
 
+    /**
+     * Supprime définitivement le compte de l'utilisateur authentifié.
+     * Le mot de passe courant est exigé pour confirmer l'action. Les convois
+     * appartenant à l'utilisateur (et leurs segments en cascade) sont supprimés
+     * avant le compte, le tout dans une transaction.
+     *
+     * @param request corps contenant le mot de passe de confirmation
+     * @param authentication contexte de sécurité de l'utilisateur courant
+     * @return 200 si supprimé, 401 si le mot de passe est incorrect, 404 si l'utilisateur est introuvable
+     */
     @DeleteMapping("/account")
     @Transactional
     public ResponseEntity<?> deleteAccount(@Valid @RequestBody DeleteAccountRequest request, Authentication authentication) {
