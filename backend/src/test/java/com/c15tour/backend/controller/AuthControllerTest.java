@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -265,6 +266,63 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("currentPassword", "currentPass", "newPassword", ""))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteAccount_WithoutAuth_ShouldReturn403() throws Exception {
+        mockMvc.perform(delete("/auth/account")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("password", "currentPass"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deleteAccount_WithValidAuth_ShouldReturn200AndDeleteUser() throws Exception {
+        User user = mockUser("auth@test.com", "currentPass");
+        when(userRepository.findByEmail("auth@test.com")).thenReturn(Optional.of(user));
+        when(tourRepository.findByOwner(user)).thenReturn(java.util.List.of());
+        String token = jwtUtils.generateToken("auth@test.com", "ADMIN");
+
+        mockMvc.perform(delete("/auth/account")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("password", "currentPass"))))
+                .andExpect(status().isOk());
+
+        verify(tourRepository).deleteAll(anyList());
+        verify(userRepository).delete(user);
+    }
+
+    @Test
+    void deleteAccount_WithWrongPassword_ShouldReturn401() throws Exception {
+        User user = mockUser("auth@test.com", "currentPass");
+        when(userRepository.findByEmail("auth@test.com")).thenReturn(Optional.of(user));
+        String token = jwtUtils.generateToken("auth@test.com", "ADMIN");
+
+        mockMvc.perform(delete("/auth/account")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("password", "wrongpwd"))))
+                .andExpect(status().isUnauthorized());
+
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteAccount_WithBlankPassword_ShouldReturn400() throws Exception {
+        User user = mockUser("auth@test.com", "currentPass");
+        when(userRepository.findByEmail("auth@test.com")).thenReturn(Optional.of(user));
+        String token = jwtUtils.generateToken("auth@test.com", "ADMIN");
+
+        mockMvc.perform(delete("/auth/account")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("password", ""))))
                 .andExpect(status().isBadRequest());
     }
 
