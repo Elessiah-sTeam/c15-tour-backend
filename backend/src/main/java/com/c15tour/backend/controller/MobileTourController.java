@@ -7,6 +7,8 @@ import com.c15tour.backend.service.MobileTourService;
 import com.c15tour.model.AudioMessageResponse;
 import com.c15tour.model.JoinResponse;
 import com.c15tour.model.OrganiserPositionRequest;
+import com.c15tour.model.RedirectRequest;
+import com.c15tour.model.RedirectTourResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -60,6 +62,17 @@ public class MobileTourController implements MobileApi {
     @Override
     public ResponseEntity<List<AudioMessageResponse>> getAudioMessages(String code) {
         return ResponseEntity.ok(audioMessageService.getHistory(code));
+    }
+
+    @Override
+    public ResponseEntity<RedirectTourResponse> redirectToTour(String code, RedirectRequest redirectRequest) {
+        RedirectTourResponse response = mobileTourService.redirect(
+                code,
+                redirectRequest.getLatitude(),
+                redirectRequest.getLongitude(),
+                redirectRequest.getLastReachedWaypointIndex()
+        );
+        return ResponseEntity.ok(response);
     }
 
     @Override

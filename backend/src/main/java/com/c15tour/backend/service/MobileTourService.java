@@ -1,9 +1,21 @@
 package com.c15tour.backend.service;
 
+import com.c15tour.backend.entity.Segment;
 import com.c15tour.backend.entity.Tour;
+import com.c15tour.backend.entity.Waypoint;
+import com.c15tour.backend.mapper.TourMapper;
 import com.c15tour.backend.repository.TourRepository;
+import com.c15tour.backend.service.osrm.OSRMResponse;
+import com.c15tour.backend.service.osrm.OSRMTableResponse;
+import com.c15tour.model.Coordinates;
 import com.c15tour.model.JoinResponse;
 import com.c15tour.model.OrganiserPositionRequest;
+import com.c15tour.model.RedirectTourResponse;
+import com.c15tour.model.RouteToStartResponse;
+import com.c15tour.model.TourResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,6 +24,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,11 +34,23 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Service
 public class MobileTourService {
 
+    private static final Logger logger = LoggerFactory.getLogger(MobileTourService.class);
+    private static final int REDIRECT_CANDIDATE_COUNT = 3;
+
     private final TourRepository tourRepository;
+    private final RoutingService routingService;
+    private final TourMapper tourMapper;
+    private final ObjectMapper objectMapper;
     private final Map<Long, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
-    public MobileTourService(TourRepository tourRepository) {
+    public MobileTourService(TourRepository tourRepository,
+                             RoutingService routingService,
+                             TourMapper tourMapper,
+                             ObjectMapper objectMapper) {
         this.tourRepository = tourRepository;
+        this.routingService = routingService;
+        this.tourMapper = tourMapper;
+        this.objectMapper = objectMapper;
     }
 
     public JoinResponse join(String code) {
@@ -125,5 +150,115 @@ public class MobileTourService {
         if (tourEmitters != null) {
             tourEmitters.remove(emitter);
         }
+    }
+
+    public RedirectTourResponse redirect(String code, double lat, double lng, Integer lastReachedWaypointIndex) {
+        Tour tour = tourRepository.findByShareCode(code)
+                .or(() -> tourRepository.findByOrganiserCode(code))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tour not found"));
+
+        List<Waypoint> allWaypoints = tour.getSegments().stream()
+                .sorted(Comparator.comparingInt(Segment::getOrderIndex))
+                .flatMap(s -> s.getWaypoints().stream()
+                        .sorted(Comparator.comparingInt(Waypoint::getOrderIndex)))
+                .toList();
+
+        int skipCount = (lastReachedWaypointIndex != null) ? lastReachedWaypointIndex + 1 : 0;
+        List<Waypoint> remaining = allWaypoints.stream()
+                .skip(skipCount)
+                .toList();
+
+        if (remaining.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No remaining waypoints");
+        }
+
+        Coordinates origin = new Coordinates();
+        origin.setLatitude(lat);
+        origin.setLongitude(lng);
+
+        List<Waypoint> candidates = remaining.stream()
+                .limit(REDIRECT_CANDIDATE_COUNT)
+                .toList();
+
+        int rejoinIndex;
+        if (candidates.size() == 1) {
+            rejoinIndex = 0;
+        } else {
+            List<Coordinates> candidateCoords = candidates.stream().map(w -> {
+                Coordinates c = new Coordinates();
+                c.setLatitude(w.getLatitude());
+                c.setLongitude(w.getLongitude());
+                return c;
+            }).toList();
+
+            OSRMTableResponse table = routingService.calculateTable(origin, candidateCoords);
+            if (table == null || table.durations() == null || table.durations().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not compute durations");
+            }
+            List<Double> durations = table.durations().getFirst();
+            int bestIndex = 0;
+            Double bestDuration = null;
+            for (int i = 0; i < durations.size(); i++) {
+                Double d = durations.get(i);
+                if (d != null && (bestDuration == null || d < bestDuration)) {
+                    bestDuration = d;
+                    bestIndex = i;
+                }
+            }
+            rejoinIndex = bestIndex;
+        }
+
+        List<Waypoint> routeWaypoints = remaining.subList(rejoinIndex, remaining.size());
+
+        List<Coordinates> coordinates = new ArrayList<>();
+        coordinates.add(origin);
+        for (Waypoint w : routeWaypoints) {
+            Coordinates c = new Coordinates();
+            c.setLatitude(w.getLatitude());
+            c.setLongitude(w.getLongitude());
+            coordinates.add(c);
+        }
+
+        OSRMResponse osrmResponse = routingService.calculateRoute(coordinates, true);
+        if (osrmResponse == null || osrmResponse.routes() == null || osrmResponse.routes().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not compute route");
+        }
+
+        var route = osrmResponse.routes().getFirst();
+        RouteToStartResponse routeResponse = new RouteToStartResponse();
+        routeResponse.setDistance(route.distance() != null ? (long) Math.round(route.distance()) : 0L);
+        routeResponse.setDuration(route.duration() != null ? (long) Math.round(route.duration()) : 0L);
+
+        try {
+            routeResponse.setGeometry(objectMapper.writeValueAsString(route.geometry()));
+            if (route.legs() != null) {
+                List<OSRMResponse.Step> allSteps = route.legs().stream()
+                        .filter(leg -> leg.steps() != null)
+                        .flatMap(leg -> leg.steps().stream())
+                        .toList();
+                routeResponse.setSteps(objectMapper.writeValueAsString(allSteps));
+            }
+        } catch (Exception e) {
+            logger.error("Failed to serialize OSRM redirect response", e);
+        }
+
+        Waypoint rejoinWaypoint = routeWaypoints.getFirst();
+        Coordinates rejoinCoords = new Coordinates();
+        rejoinCoords.setLatitude(rejoinWaypoint.getLatitude());
+        rejoinCoords.setLongitude(rejoinWaypoint.getLongitude());
+
+        com.c15tour.model.Waypoints startDto = new com.c15tour.model.Waypoints();
+        startDto.setName(rejoinWaypoint.getName() != null ? rejoinWaypoint.getName() : "Waypoint");
+        startDto.setCoordinates(rejoinCoords);
+        routeResponse.setStartPoint(startDto);
+
+        TourResponse tourResponse = tourMapper.toResponse(tour);
+        tourResponse.setOrganiserCode(null);
+        tourResponse.setRole(TourResponse.RoleEnum.ORGANISER);
+
+        RedirectTourResponse response = new RedirectTourResponse();
+        response.setTour(tourResponse);
+        response.setRoute(routeResponse);
+        return response;
     }
 }
